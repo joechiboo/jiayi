@@ -240,14 +240,24 @@
                     cell.dataset.col = col;
                     cell.dataset.value = value; // 添加數值屬性用於CSS樣式
                     
-                    // 拖曳事件處理
+                    // 拖曳事件處理 - 滑鼠
                     cell.addEventListener('mousedown', (e) => startDrag(e, row, col));
                     cell.addEventListener('mouseenter', () => {
                         if (isDragging) {
                             addCellToSelection(row, col);
                         }
                     });
-                    cell.addEventListener('mouseup', endDrag);
+                    cell.addEventListener('mouseup', (e) => endDrag(e));
+                    
+                    // 拖曳事件處理 - 觸控
+                    cell.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        startDrag(e, row, col);
+                    });
+                    cell.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        endDrag(e);
+                    });
                     
                     boardElement.appendChild(cell);
                 }
@@ -256,8 +266,48 @@
         
         // 初始化全域事件處理（只需要執行一次）
         function initEventListeners() {
-            document.addEventListener('mouseup', endDrag);
-            document.addEventListener('mouseleave', endDrag);
+            document.addEventListener('mouseup', (e) => endDrag(e));
+            document.addEventListener('mouseleave', (e) => endDrag(e));
+            
+            // 觸控事件
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.addEventListener('touchmove', handleTouchMove);
+            document.addEventListener('touchend', (e) => endDrag(e));
+        }
+        
+        // 處理觸控移動
+        function handleTouchMove(e) {
+            if (!isDragging) return;
+            
+            e.preventDefault();
+            const touch = e.touches[0];
+            const cellPos = getCellFromPosition(touch.clientX, touch.clientY);
+            
+            if (cellPos) {
+                addCellToSelection(cellPos.row, cellPos.col);
+            }
+        }
+        
+        // 從螢幕座標獲取格子位置
+        function getCellFromPosition(clientX, clientY) {
+            const boardElement = document.getElementById('gameBoard');
+            const rect = boardElement.getBoundingClientRect();
+            
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            
+            const cellSize = 60;
+            const gap = 5;
+            const padding = 10;
+            
+            const col = Math.floor((x - padding) / (cellSize + gap));
+            const row = Math.floor((y - padding) / (cellSize + gap));
+            
+            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+                return { row, col };
+            }
+            
+            return null;
         }
 
         // 開始拖曳
@@ -288,16 +338,25 @@
         }
         
         // 結束拖曳
-        function endDrag() {
+        function endDrag(e) {
             if (!isDragging) return;
             
-            console.log('endDrag called, selectedCells:', selectedCells.length);
             isDragging = false;
             
             if (selectedCells.length >= 2) {
-                console.log('Executing merge...');
-                // 執行合併
-                executeMove();
+                // 檢查是否應該取消（根據放開位置與最後一格的距離）
+                const shouldCancel = checkShouldCancel(e);
+                
+                if (shouldCancel) {
+                    // 取消操作，恢復原狀
+                    selectedCells = [];
+                    connectionLines = [];
+                    updateCellStyles();
+                    clearConnections();
+                } else {
+                    // 執行合併
+                    executeMove();
+                }
             } else {
                 // 恢復原狀
                 selectedCells = [];
@@ -305,6 +364,53 @@
                 updateCellStyles();
                 clearConnections();
             }
+        }
+        
+        // 檢查是否應該取消操作
+        function checkShouldCancel(e) {
+            if (!e || selectedCells.length === 0) return false;
+            
+            const lastCell = selectedCells[selectedCells.length - 1];
+            let clientX, clientY;
+            
+            // 獲取放開位置
+            if (e.type === 'touchend' && e.changedTouches) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else if (e.clientX !== undefined) {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            } else {
+                return false; // 無法獲取位置，不取消
+            }
+            
+            // 計算最後一個格子的中心位置
+            const lastCellCenter = getCellScreenCenter(lastCell.row, lastCell.col);
+            
+            // 計算距離
+            const distance = Math.sqrt(
+                Math.pow(clientX - lastCellCenter.x, 2) + 
+                Math.pow(clientY - lastCellCenter.y, 2)
+            );
+            
+            // 如果距離超過格子大小的1.5倍，則取消
+            const cancelThreshold = 90; // 60 * 1.5
+            return distance > cancelThreshold;
+        }
+        
+        // 獲取格子在螢幕上的中心位置
+        function getCellScreenCenter(row, col) {
+            const boardElement = document.getElementById('gameBoard');
+            const rect = boardElement.getBoundingClientRect();
+            
+            const cellSize = 60;
+            const gap = 5;
+            const padding = 10;
+            
+            const x = rect.left + padding + col * (cellSize + gap) + cellSize / 2;
+            const y = rect.top + padding + row * (cellSize + gap) + cellSize / 2;
+            
+            return { x, y };
         }
 
         // 檢查是否可以選擇格子
@@ -377,11 +483,8 @@
         function executeMove() {
             if (selectedCells.length < 2) return;
             
-            console.log('executeMove called with cells:', selectedCells);
-            
             // 計算合併後的數字和分數
             const mergedValue = calculateMergedValue(selectedCells);
-            console.log('mergedValue:', mergedValue);
             const points = mergedValue;
             score += points;
             updateScore();
