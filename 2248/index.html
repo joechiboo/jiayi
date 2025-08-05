@@ -153,7 +153,7 @@
         <div class="score-board">
             <h1>2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">選擇相鄰的相同數字或倍數方塊合併！相同數字合併會倍增。</div>
+            <div class="game-info">連結相同數字或依序遞增倍數（如2→2→4）！不可回退。</div>
         </div>
         
         <div class="game-board" id="gameBoard">
@@ -250,10 +250,35 @@
             
             if (!isAdjacent) return false;
             
-            // 檢查數字是否符合規則 (相同數字或倍數關係)
-            return currentValue === lastValue || 
-                   currentValue % lastValue === 0 || 
-                   lastValue % currentValue === 0;
+            // 檢查數字連結規則
+            return isValidConnection(currentValue, lastValue, selectedCells);
+        }
+        
+        // 檢查連結是否有效
+        function isValidConnection(currentValue, lastValue, existingCells) {
+            // 相同數字總是可以連結
+            if (currentValue === lastValue) return true;
+            
+            // 檢查整個連結序列是否符合遞增倍數規則
+            const allValues = [...existingCells.map(cell => cell.value), currentValue];
+            
+            // 檢查序列是否為有效的倍數序列（只能遞增，不能回退）
+            for (let i = 1; i < allValues.length; i++) {
+                const prev = allValues[i-1];
+                const curr = allValues[i];
+                
+                // 允許相同數字或當前數字是前一個的倍數
+                if (curr !== prev && curr % prev !== 0) {
+                    return false;
+                }
+                
+                // 不允許數字變小（除非相同）
+                if (curr < prev) {
+                    return false;
+                }
+            }
+            
+            return true;
         }
 
         // 更新格子樣式
@@ -429,9 +454,8 @@
                             if (newRow >= 0 && newRow < ROWS && newCol >= 0 && newCol < COLS) {
                                 const neighborValue = gameBoard[newRow][newCol];
                                 
-                                // 檢查是否可以連結 (相同數字或倍數關係)
+                                // 檢查是否可以連結 (相同數字或鄰居是當前的倍數)
                                 if (currentValue === neighborValue || 
-                                    currentValue % neighborValue === 0 || 
                                     neighborValue % currentValue === 0) {
                                     return false; // 還有可連結的數字，遊戲未結束
                                 }
