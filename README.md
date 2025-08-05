@@ -38,26 +38,9 @@
 - 🎯 **用戶體驗**: 直觀易用的介面設計
 - 🚀 **效能優化**: 流暢的遊戲體驗和快速載入
 
-## Contributors ✨
+## 開發者
 
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/joechiboo"><img src="https://avatars.githubusercontent.com/u/joechiboo?v=4?s=100" width="100px;" alt="Jiayi"/><br /><sub><b>Jiayi</b></sub></a><br /><a href="https://github.com/joechiboo/jiayi.github.io/commits?author=joechiboo" title="Code">💻</a> <a href="#design-joechiboo" title="Design">🎨</a> <a href="#ideas-joechiboo" title="Ideas, Planning, & Feedback">🤔</a></td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- markdownlint-enable -->
-<!-- prettier-ignore-end -->
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+**Jiayi** - 遊戲設計與開發 🎮💻
 
 ---
 
