@@ -215,6 +215,7 @@
             }
             
             renderBoard();
+            initEventListeners();
         }
 
         // 生成隨機數字 (2的倍數, 從2到256)
@@ -227,7 +228,7 @@
         // 渲染遊戲棋盤
         function renderBoard() {
             const boardElement = document.getElementById('gameBoard');
-            boardElement.innerHTML = '';
+            boardElement.innerHTML = '<svg id="connectionSvg" class="connection-svg"></svg>';
             
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
@@ -251,8 +252,10 @@
                     boardElement.appendChild(cell);
                 }
             }
-            
-            // 添加全域事件處理
+        }
+        
+        // 初始化全域事件處理（只需要執行一次）
+        function initEventListeners() {
             document.addEventListener('mouseup', endDrag);
             document.addEventListener('mouseleave', endDrag);
         }
@@ -288,9 +291,11 @@
         function endDrag() {
             if (!isDragging) return;
             
+            console.log('endDrag called, selectedCells:', selectedCells.length);
             isDragging = false;
             
             if (selectedCells.length >= 2) {
+                console.log('Executing merge...');
                 // 執行合併
                 executeMove();
             } else {
@@ -372,8 +377,11 @@
         function executeMove() {
             if (selectedCells.length < 2) return;
             
+            console.log('executeMove called with cells:', selectedCells);
+            
             // 計算合併後的數字和分數
             const mergedValue = calculateMergedValue(selectedCells);
+            console.log('mergedValue:', mergedValue);
             const points = mergedValue;
             score += points;
             updateScore();
