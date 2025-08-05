@@ -78,6 +78,34 @@
             font-size: 0.9em;
             opacity: 0.7;
         }
+        
+        .claude-logo {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 500;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .claude-logo:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .claude-logo::before {
+            content: '🤖';
+            margin-right: 6px;
+        }
     </style>
 </head>
 <body>
@@ -99,5 +127,7 @@
             Made with ❤️ by Jiayi
         </div>
     </div>
+    
+    <a href="https://claude.ai/" class="claude-logo" target="_blank">Enhanced by Claude</a>
 </body>
 </html>
