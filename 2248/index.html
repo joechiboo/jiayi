@@ -153,7 +153,7 @@
         <div class="score-board">
             <h1>2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">向任意方向滑動連結相同數字或倍數方塊！</div>
+            <div class="game-info">選擇相鄰的相同數字或倍數方塊合併！相同數字合併會倍增。</div>
         </div>
         
         <div class="game-board" id="gameBoard">
@@ -163,6 +163,7 @@
         <div class="controls">
             <button class="btn" onclick="newGame()">新遊戲</button>
             <button class="btn" onclick="clearSelection()">清除選擇</button>
+            <button class="btn" id="mergeBtn" onclick="executeMove()" disabled>合併數字</button>
         </div>
     </div>
 
@@ -268,6 +269,10 @@
                     cell.classList.add('selected');
                 }
             });
+            
+            // 更新合併按鈕狀態
+            const mergeBtn = document.getElementById('mergeBtn');
+            mergeBtn.disabled = selectedCells.length < 2;
         }
 
         // 清除選擇
@@ -276,19 +281,27 @@
             updateCellStyles();
         }
 
-        // 執行消除
+        // 執行合併
         function executeMove() {
             if (selectedCells.length < 2) return;
             
-            // 計算分數 - 所有連結數字的總和
-            const points = selectedCells.reduce((sum, cell) => sum + cell.value, 0);
+            // 計算合併後的數字和分數
+            const mergedValue = calculateMergedValue(selectedCells);
+            const points = mergedValue;
             score += points;
             updateScore();
             
-            // 移除選中的格子 (設為0)
-            selectedCells.forEach(cell => {
+            // 找出第一個選中的格子作為合併目標
+            const targetCell = selectedCells[0];
+            
+            // 將合併後的數字放在第一個選中的格子
+            gameBoard[targetCell.row][targetCell.col] = mergedValue;
+            
+            // 移除其他選中的格子 (設為0)
+            for (let i = 1; i < selectedCells.length; i++) {
+                const cell = selectedCells[i];
                 gameBoard[cell.row][cell.col] = 0;
-            });
+            }
             
             // 清除選擇
             selectedCells = [];
@@ -307,6 +320,21 @@
                 setTimeout(() => {
                     alert(`遊戲結束！最終分數: ${score}`);
                 }, 100);
+            }
+        }
+        
+        // 計算合併後的數字值
+        function calculateMergedValue(cells) {
+            // 檢查是否所有數字都相同
+            const firstValue = cells[0].value;
+            const allSame = cells.every(cell => cell.value === firstValue);
+            
+            if (allSame) {
+                // 如果都是相同數字，按2048規則：2+2=4, 2+2+2=8, 4+4=8等
+                return firstValue * cells.length;
+            } else {
+                // 如果是不同數字，返回總和
+                return cells.reduce((sum, cell) => sum + cell.value, 0);
             }
         }
 
@@ -356,13 +384,15 @@
         // 添加鍵盤事件
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
-                executeMove();
+                if (selectedCells.length >= 2) {
+                    executeMove();
+                }
             } else if (e.key === 'Escape') {
                 clearSelection();
             }
         });
 
-        // 修改selectCell函數以自動執行消除
+        // 選擇格子函數
         function selectCell(row, col) {
             const cellIndex = selectedCells.findIndex(cell => cell.row === row && cell.col === col);
             
@@ -376,10 +406,7 @@
             
             updateCellStyles();
             
-            // 如果選擇了多個格子，自動執行消除
-            if (selectedCells.length >= 2) {
-                setTimeout(executeMove, 300); // 短暫延遲讓玩家看到選擇
-            }
+            // 不再自動執行，讓玩家選擇多個數字後手動確認
         }
 
         // 檢查遊戲是否結束
