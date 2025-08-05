@@ -100,6 +100,42 @@
             background: #da190b;
         }
 
+        .direction-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+            margin-top: 15px;
+        }
+
+        .direction-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .direction-btn:hover {
+            background: #1976D2;
+            transform: scale(1.05);
+        }
+
+        .direction-btn:active {
+            transform: scale(0.95);
+        }
+
+        .direction-btn.up { grid-column: 2; grid-row: 1; }
+        .direction-btn.down { grid-column: 2; grid-row: 3; }
+        .direction-btn.left { grid-column: 1; grid-row: 2; }
+        .direction-btn.right { grid-column: 3; grid-row: 2; }
+
         .touch-instructions {
             text-align: center;
             color: #666;
@@ -108,6 +144,34 @@
             padding: 10px;
             background: rgba(0,0,0,0.05);
             border-radius: 8px;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 500;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-button:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .back-button::before {
+            content: '←';
+            margin-right: 6px;
         }
 
         .game-over {
@@ -186,6 +250,11 @@
                 font-size: 18px;
             }
             
+            .direction-pad {
+                grid-template-columns: repeat(3, 50px);
+                grid-template-rows: repeat(3, 50px);
+            }
+            
             .touch-instructions {
                 font-size: 12px;
                 padding: 8px;
@@ -217,16 +286,17 @@
             <div class="game-info">可穿牆！每吃10個食物會加速！</div>
         </div>
         
-        <canvas id="gameCanvas" class="game-canvas" width="400" height="400"></canvas>
+        <canvas id="gameCanvas" class="game-canvas" width="300" height="300"></canvas>
         
-        <div class="controls">
-            <button class="btn" onclick="startGame()">開始遊戲</button>
-            <button class="btn" onclick="pauseGame()">暫停</button>
-            <button class="btn danger" onclick="resetGame()">重新開始</button>
+        <div class="direction-pad">
+            <button class="direction-btn up" onclick="changeDirection('up')">▲</button>
+            <button class="direction-btn left" onclick="changeDirection('left')">◄</button>
+            <button class="direction-btn right" onclick="changeDirection('right')">►</button>
+            <button class="direction-btn down" onclick="changeDirection('down')">▼</button>
         </div>
         
         <div class="touch-instructions">
-            📱 滑動控制方向 | 點擊開始/暫停 | ⌨️ 方向鍵 + 空白鍵
+            📱 滑動控制方向 | 點擊畫面開始 | ⌨️ 方向鍵
         </div>
     </div>
 
@@ -246,8 +316,8 @@
         const highScoreElement = document.getElementById('highScore');
 
         // 遊戲參數
-        const GRID_SIZE = 20;
-        const CANVAS_SIZE = 400;
+        const GRID_SIZE = 15;
+        const CANVAS_SIZE = 300;
         const GRID_COUNT = CANVAS_SIZE / GRID_SIZE;
 
         // 遊戲變數
@@ -283,18 +353,14 @@
             }
         }
 
-        // 暫停遊戲
-        function pauseGame() {
+
+        // 重新開始遊戲
+        function resetGame() {
             gameRunning = false;
             if (gameLoop) {
                 clearInterval(gameLoop);
                 gameLoop = null;
             }
-        }
-
-        // 重新開始遊戲
-        function resetGame() {
-            pauseGame();
             snake = [{ x: 10, y: 10 }];
             direction = { x: 0, y: 0 };
             score = 0;
@@ -429,7 +495,11 @@
 
         // 遊戲結束
         function gameOver() {
-            pauseGame();
+            gameRunning = false;
+            if (gameLoop) {
+                clearInterval(gameLoop);
+                gameLoop = null;
+            }
             document.getElementById('finalScore').textContent = `最終分數: ${score}`;
             document.getElementById('gameOver').style.display = 'flex';
         }
@@ -457,14 +527,6 @@
                 case 'ArrowRight':
                     e.preventDefault();
                     changeDirection('right');
-                    break;
-                case ' ':
-                    e.preventDefault();
-                    if (gameRunning) {
-                        pauseGame();
-                    } else {
-                        startGame();
-                    }
                     break;
             }
         });
@@ -496,16 +558,10 @@
 
             // 如果滑動距離很小，當作點擊處理
             if (Math.abs(dx) < minSwipeDistance && Math.abs(dy) < minSwipeDistance) {
-                // 點擊畫面開始遊戲或暫停
+                // 點擊畫面開始遊戲
                 if (!gameRunning && direction.x === 0 && direction.y === 0) {
                     // 遊戲未開始，點擊開始
                     changeDirection('right'); // 預設向右
-                } else if (gameRunning) {
-                    // 遊戲進行中，點擊暫停
-                    pauseGame();
-                } else {
-                    // 遊戲暫停，點擊繼續
-                    startGame();
                 }
             } else {
                 // 滑動控制方向
@@ -530,6 +586,7 @@
         init();
     </script>
 
+    <a href="../" class="back-button">回到首頁</a>
     <a href="https://claude.ai/" class="claude-logo" target="_blank">Enhanced by Claude</a>
 </body>
 </html>
