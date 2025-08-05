@@ -2,31 +2,39 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>2248 遊戲</title>
     <style>
         body {
             margin: 0;
-            padding: 20px;
+            padding: 0;
             font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: fixed;
         }
 
         .game-container {
             background: white;
             border-radius: 15px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
+            max-width: 90vw;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .score-board {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .score {
@@ -144,7 +152,7 @@
         
         .claude-logo {
             position: fixed;
-            bottom: 20px;
+            top: 20px;
             right: 20px;
             background: rgba(0, 0, 0, 0.8);
             color: white;
@@ -168,6 +176,54 @@
         .claude-logo::before {
             content: '🤖';
             margin-right: 6px;
+        }
+        
+        /* 手機響應式設計 */
+        @media (max-height: 700px) {
+            .game-container {
+                padding: 10px;
+            }
+            
+            .score-board {
+                margin-bottom: 10px;
+            }
+            
+            .score-board h1 {
+                font-size: 24px;
+                margin: 10px 0;
+            }
+            
+            .score {
+                font-size: 20px;
+            }
+            
+            .game-info {
+                font-size: 12px;
+            }
+            
+            .game-board {
+                grid-template-columns: repeat(5, 50px);
+                grid-template-rows: repeat(7, 50px);
+                gap: 4px;
+                padding: 8px;
+            }
+            
+            .cell {
+                font-size: 16px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .game-board {
+                grid-template-columns: repeat(5, 45px);
+                grid-template-rows: repeat(7, 45px);
+                gap: 3px;
+                padding: 6px;
+            }
+            
+            .cell {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -288,6 +344,20 @@
             }
         }
         
+        // 獲取當前格子尺寸（響應式）
+        function getCellDimensions() {
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            
+            if (viewportWidth <= 400) {
+                return { cellSize: 45, gap: 3, padding: 6 };
+            } else if (viewportHeight <= 700) {
+                return { cellSize: 50, gap: 4, padding: 8 };
+            } else {
+                return { cellSize: 60, gap: 5, padding: 10 };
+            }
+        }
+        
         // 從螢幕座標獲取格子位置
         function getCellFromPosition(clientX, clientY) {
             const boardElement = document.getElementById('gameBoard');
@@ -296,9 +366,7 @@
             const x = clientX - rect.left;
             const y = clientY - rect.top;
             
-            const cellSize = 60;
-            const gap = 5;
-            const padding = 10;
+            const { cellSize, gap, padding } = getCellDimensions();
             
             const col = Math.floor((x - padding) / (cellSize + gap));
             const row = Math.floor((y - padding) / (cellSize + gap));
@@ -394,7 +462,8 @@
             );
             
             // 如果距離超過格子大小的1.5倍，則取消
-            const cancelThreshold = 90; // 60 * 1.5
+            const { cellSize } = getCellDimensions();
+            const cancelThreshold = cellSize * 1.5;
             return distance > cancelThreshold;
         }
         
@@ -403,9 +472,7 @@
             const boardElement = document.getElementById('gameBoard');
             const rect = boardElement.getBoundingClientRect();
             
-            const cellSize = 60;
-            const gap = 5;
-            const padding = 10;
+            const { cellSize, gap, padding } = getCellDimensions();
             
             const x = rect.left + padding + col * (cellSize + gap) + cellSize / 2;
             const y = rect.top + padding + row * (cellSize + gap) + cellSize / 2;
@@ -660,9 +727,7 @@
         
         // 獲取格子中心位置
         function getCellCenter(row, col) {
-            const cellSize = 60;
-            const gap = 5;
-            const padding = 10;
+            const { cellSize, gap, padding } = getCellDimensions();
             
             const x = padding + col * (cellSize + gap) + cellSize / 2;
             const y = padding + row * (cellSize + gap) + cellSize / 2;
