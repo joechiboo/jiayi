@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jiayi's Games</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 600px;
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+        
+        .game-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .game-card {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 30px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .game-card:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-5px);
+            border-color: rgba(255,255,255,0.5);
+        }
+        
+        .game-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .game-description {
+            font-size: 1em;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Jiayi's Games</h1>
+        <div class="subtitle">歡迎來到我的遊戲世界！</div>
+        
+        <div class="game-list">
+            <a href="2248-game.html" class="game-card">
+                <div class="game-title">2248 連線遊戲</div>
+                <div class="game-description">
+                    在 5×7 的棋盤上連接相同數字或相鄰倍數，挑戰你的策略思維！
+                    支援斜角連線，享受數字消除的樂趣。
+                </div>
+            </a>
+        </div>
+        
+        <div class="footer">
+            Made with ❤️ by Jiayi
+        </div>
+    </div>
+</body>
+</html>
