@@ -67,8 +67,8 @@
         }
 
         .cell.selected {
-            background: #4CAF50;
-            color: white;
+            background: #4CAF50 !important;
+            color: white !important;
             transform: scale(1.1);
         }
 
@@ -76,6 +76,20 @@
             background: #FFC107;
             color: white;
         }
+
+        /* 數字顏色樣式 */
+        .cell[data-value="2"] { background: #eee4da; color: #776e65; }
+        .cell[data-value="4"] { background: #ede0c8; color: #776e65; }
+        .cell[data-value="8"] { background: #f2b179; color: #f9f6f2; }
+        .cell[data-value="16"] { background: #f59563; color: #f9f6f2; }
+        .cell[data-value="32"] { background: #f67c5f; color: #f9f6f2; }
+        .cell[data-value="64"] { background: #f65e3b; color: #f9f6f2; }
+        .cell[data-value="128"] { background: #edcf72; color: #f9f6f2; font-size: 16px; }
+        .cell[data-value="256"] { background: #edcc61; color: #f9f6f2; font-size: 16px; }
+        .cell[data-value="512"] { background: #edc850; color: #f9f6f2; font-size: 16px; }
+        .cell[data-value="1024"] { background: #edc53f; color: #f9f6f2; font-size: 14px; }
+        .cell[data-value="2048"] { background: #edc22e; color: #f9f6f2; font-size: 14px; }
+        
 
         .controls {
             display: flex;
@@ -153,7 +167,7 @@
         <div class="score-board">
             <h1>2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">連結相同數字或連續2倍數序列（如2→4→8），不可跳躍！</div>
+            <div class="game-info">將相同數字或其倍數的方塊連結起來！</div>
         </div>
         
         <div class="game-board" id="gameBoard">
@@ -208,10 +222,12 @@
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     const cell = document.createElement('div');
+                    const value = gameBoard[row][col];
                     cell.className = 'cell';
-                    cell.textContent = gameBoard[row][col];
+                    cell.textContent = value;
                     cell.dataset.row = row;
                     cell.dataset.col = col;
+                    cell.dataset.value = value; // 添加數值屬性用於CSS樣式
                     cell.addEventListener('click', () => selectCell(row, col));
                     boardElement.appendChild(cell);
                 }
