@@ -282,7 +282,6 @@
         <div class="score-board">
             <h1>🐍 貪食蛇</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="score">最高分: <span id="highScore">0</span></div>
             <div class="game-info">可穿牆！每吃10個食物會加速！</div>
         </div>
         
@@ -313,7 +312,6 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
-        const highScoreElement = document.getElementById('highScore');
 
         // 遊戲參數
         const GRID_SIZE = 15;
@@ -327,13 +325,11 @@
         let score = 0;
         let gameRunning = false;
         let gameLoop = null;
-        let highScore = localStorage.getItem('snakeHighScore') || 0;
         let gameSpeed = 150; // 初始速度 (毫秒)
         let foodEaten = 0; // 已吃食物數量
 
         // 初始化
         function init() {
-            highScoreElement.textContent = highScore;
             drawGame();
         }
 
@@ -406,12 +402,6 @@
                     updateGameSpeed();
                 }
                 
-                // 更新最高分
-                if (score > highScore) {
-                    highScore = score;
-                    highScoreElement.textContent = highScore;
-                    localStorage.setItem('snakeHighScore', highScore);
-                }
             } else {
                 snake.pop();
             }
