@@ -350,17 +350,23 @@
         
         // 計算合併後的數字值
         function calculateMergedValue(cells) {
-            // 檢查是否所有數字都相同
-            const firstValue = cells[0].value;
-            const allSame = cells.every(cell => cell.value === firstValue);
+            // 計算總和
+            const sum = cells.reduce((total, cell) => total + cell.value, 0);
             
-            if (allSame) {
-                // 如果都是相同數字，按2048規則：2+2=4, 2+2+2=8, 4+4=8等
-                return firstValue * cells.length;
-            } else {
-                // 如果是不同數字，返回總和
-                return cells.reduce((sum, cell) => sum + cell.value, 0);
+            // 找到下一個2的倍數（進位）
+            return getNextPowerOfTwo(sum);
+        }
+        
+        // 找到大於等於給定數字的下一個2的倍數
+        function getNextPowerOfTwo(num) {
+            if (num <= 2) return 2;
+            
+            // 找到最小的2的倍數，使其大於等於num
+            let power = 1;
+            while (Math.pow(2, power) < num) {
+                power++;
             }
+            return Math.pow(2, power);
         }
 
         // 應用重力 (數字下落)
