@@ -153,7 +153,7 @@
         <div class="score-board">
             <h1>2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">連接相同數字或相鄰倍數來消除！</div>
+            <div class="game-info">向任意方向滑動連結相同數字或倍數方塊！</div>
         </div>
         
         <div class="game-board" id="gameBoard">
@@ -242,15 +242,17 @@
             const currentValue = gameBoard[row][col];
             const lastValue = lastSelected.value;
             
-            // 檢查是否相鄰 (包括斜角)
+            // 檢查是否相鄰 (包括八個方向: 上下左右和四個斜角)
             const rowDiff = Math.abs(row - lastSelected.row);
             const colDiff = Math.abs(col - lastSelected.col);
             const isAdjacent = rowDiff <= 1 && colDiff <= 1 && !(rowDiff === 0 && colDiff === 0);
             
             if (!isAdjacent) return false;
             
-            // 檢查數字是否符合規則 (相同或相鄰倍數)
-            return currentValue === lastValue || currentValue === lastValue * 2 || lastValue === currentValue * 2;
+            // 檢查數字是否符合規則 (相同數字或倍數關係)
+            return currentValue === lastValue || 
+                   currentValue % lastValue === 0 || 
+                   lastValue % currentValue === 0;
         }
 
         // 更新格子樣式
@@ -278,7 +280,7 @@
         function executeMove() {
             if (selectedCells.length < 2) return;
             
-            // 計算分數
+            // 計算分數 - 所有連結數字的總和
             const points = selectedCells.reduce((sum, cell) => sum + cell.value, 0);
             score += points;
             updateScore();
@@ -299,6 +301,13 @@
             
             // 重新渲染
             renderBoard();
+            
+            // 檢查遊戲是否結束
+            if (isGameOver()) {
+                setTimeout(() => {
+                    alert(`遊戲結束！最終分數: ${score}`);
+                }, 100);
+            }
         }
 
         // 應用重力 (數字下落)
@@ -371,6 +380,40 @@
             if (selectedCells.length >= 2) {
                 setTimeout(executeMove, 300); // 短暫延遲讓玩家看到選擇
             }
+        }
+
+        // 檢查遊戲是否結束
+        function isGameOver() {
+            // 檢查盤面上是否還有可以連結的數字
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    // 檢查每個格子是否可以與相鄰格子連結
+                    const currentValue = gameBoard[row][col];
+                    
+                    // 檢查八個方向的相鄰格子
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (dr === 0 && dc === 0) continue;
+                            
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            
+                            // 檢查新位置是否在棋盤內
+                            if (newRow >= 0 && newRow < ROWS && newCol >= 0 && newCol < COLS) {
+                                const neighborValue = gameBoard[newRow][newCol];
+                                
+                                // 檢查是否可以連結 (相同數字或倍數關係)
+                                if (currentValue === neighborValue || 
+                                    currentValue % neighborValue === 0 || 
+                                    neighborValue % currentValue === 0) {
+                                    return false; // 還有可連結的數字，遊戲未結束
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return true; // 沒有可連結的數字，遊戲結束
         }
 
         // 啟動遊戲
