@@ -117,13 +117,22 @@
             cursor: not-allowed;
         }
 
-        .connection-line {
+        .connection-svg {
             position: absolute;
-            background: #4CAF50;
-            height: 3px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
-            z-index: 10;
-            border-radius: 2px;
+            z-index: 5;
+        }
+        
+        .connection-line {
+            stroke: #4CAF50;
+            stroke-width: 4;
+            stroke-linecap: round;
+            fill: none;
+            opacity: 0.8;
         }
 
         .game-info {
@@ -167,17 +176,16 @@
         <div class="score-board">
             <h1>2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">將相同數字或其倍數的方塊連結起來！</div>
+            <div class="game-info">拖曳連結相同數字或連續2倍數序列（如2→4→8）！</div>
         </div>
         
         <div class="game-board" id="gameBoard">
             <!-- 格子會由 JavaScript 動態生成 -->
+            <svg id="connectionSvg" class="connection-svg"></svg>
         </div>
         
         <div class="controls">
             <button class="btn" onclick="newGame()">新遊戲</button>
-            <button class="btn" onclick="clearSelection()">清除選擇</button>
-            <button class="btn" id="mergeBtn" onclick="executeMove()" disabled>合併數字</button>
         </div>
     </div>
 
@@ -188,6 +196,11 @@
         let score = 0;
         const ROWS = 7;
         const COLS = 5;
+        
+        // 拖曳狀態
+        let isDragging = false;
+        let dragStartCell = null;
+        let connectionLines = [];
 
         // 初始化遊戲
         function initGame() {
@@ -228,27 +241,68 @@
                     cell.dataset.row = row;
                     cell.dataset.col = col;
                     cell.dataset.value = value; // 添加數值屬性用於CSS樣式
-                    cell.addEventListener('click', () => selectCell(row, col));
+                    
+                    // 拖曳事件處理
+                    cell.addEventListener('mousedown', (e) => startDrag(e, row, col));
+                    cell.addEventListener('mouseenter', () => {
+                        if (isDragging) {
+                            addCellToSelection(row, col);
+                        }
+                    });
+                    cell.addEventListener('mouseup', endDrag);
+                    
                     boardElement.appendChild(cell);
                 }
             }
+            
+            // 添加全域事件處理
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('mouseleave', endDrag);
         }
 
-        // 選擇格子
-        function selectCell(row, col) {
-            const cellIndex = selectedCells.findIndex(cell => cell.row === row && cell.col === col);
+        // 開始拖曳
+        function startDrag(e, row, col) {
+            e.preventDefault();
+            isDragging = true;
+            selectedCells = [];
+            connectionLines = [];
             
-            if (cellIndex !== -1) {
-                // 如果已選擇，則取消選擇
-                selectedCells.splice(cellIndex, 1);
-            } else {
-                // 檢查是否可以選擇此格子
-                if (canSelectCell(row, col)) {
-                    selectedCells.push({row, col, value: gameBoard[row][col]});
-                }
-            }
-            
+            selectedCells.push({row, col, value: gameBoard[row][col]});
+            dragStartCell = {row, col};
             updateCellStyles();
+            drawConnections();
+        }
+        
+        // 添加格子到選擇
+        function addCellToSelection(row, col) {
+            // 檢查是否已經在選擇中
+            const exists = selectedCells.some(cell => cell.row === row && cell.col === col);
+            if (exists) return;
+            
+            // 檢查是否可以選擇此格子
+            if (canSelectCell(row, col)) {
+                selectedCells.push({row, col, value: gameBoard[row][col]});
+                updateCellStyles();
+                drawConnections();
+            }
+        }
+        
+        // 結束拖曳
+        function endDrag() {
+            if (!isDragging) return;
+            
+            isDragging = false;
+            
+            if (selectedCells.length >= 2) {
+                // 執行合併
+                executeMove();
+            } else {
+                // 恢復原狀
+                selectedCells = [];
+                connectionLines = [];
+                updateCellStyles();
+                clearConnections();
+            }
         }
 
         // 檢查是否可以選擇格子
@@ -314,16 +368,8 @@
                 }
             });
             
-            // 更新合併按鈕狀態
-            const mergeBtn = document.getElementById('mergeBtn');
-            mergeBtn.disabled = selectedCells.length < 2;
         }
 
-        // 清除選擇
-        function clearSelection() {
-            selectedCells = [];
-            updateCellStyles();
-        }
 
         // 執行合併
         function executeMove() {
@@ -347,8 +393,10 @@
                 gameBoard[cell.row][cell.col] = 0;
             }
             
-            // 清除選擇
+            // 清除選擇和連線
             selectedCells = [];
+            connectionLines = [];
+            clearConnections();
             
             // 應用重力
             applyGravity();
@@ -431,33 +479,7 @@
             initGame();
         }
 
-        // 添加鍵盤事件
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                if (selectedCells.length >= 2) {
-                    executeMove();
-                }
-            } else if (e.key === 'Escape') {
-                clearSelection();
-            }
-        });
 
-        // 選擇格子函數
-        function selectCell(row, col) {
-            const cellIndex = selectedCells.findIndex(cell => cell.row === row && cell.col === col);
-            
-            if (cellIndex !== -1) {
-                selectedCells.splice(cellIndex, 1);
-            } else {
-                if (canSelectCell(row, col)) {
-                    selectedCells.push({row, col, value: gameBoard[row][col]});
-                }
-            }
-            
-            updateCellStyles();
-            
-            // 不再自動執行，讓玩家選擇多個數字後手動確認
-        }
 
         // 檢查遊戲是否結束
         function isGameOver() {
@@ -490,6 +512,54 @@
                 }
             }
             return true; // 沒有可連結的數字，遊戲結束
+        }
+
+        // 繪製連線
+        function drawConnections() {
+            clearConnections();
+            
+            if (selectedCells.length < 2) return;
+            
+            const svg = document.getElementById('connectionSvg');
+            const boardElement = document.getElementById('gameBoard');
+            const boardRect = boardElement.getBoundingClientRect();
+            
+            for (let i = 0; i < selectedCells.length - 1; i++) {
+                const fromCell = selectedCells[i];
+                const toCell = selectedCells[i + 1];
+                
+                // 計算格子中心位置
+                const fromPos = getCellCenter(fromCell.row, fromCell.col);
+                const toPos = getCellCenter(toCell.row, toCell.col);
+                
+                // 創建連線
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', fromPos.x);
+                line.setAttribute('y1', fromPos.y);
+                line.setAttribute('x2', toPos.x);
+                line.setAttribute('y2', toPos.y);
+                line.setAttribute('class', 'connection-line');
+                
+                svg.appendChild(line);
+            }
+        }
+        
+        // 清除連線
+        function clearConnections() {
+            const svg = document.getElementById('connectionSvg');
+            svg.innerHTML = '';
+        }
+        
+        // 獲取格子中心位置
+        function getCellCenter(row, col) {
+            const cellSize = 60;
+            const gap = 5;
+            const padding = 10;
+            
+            const x = padding + col * (cellSize + gap) + cellSize / 2;
+            const y = padding + row * (cellSize + gap) + cellSize / 2;
+            
+            return { x, y };
         }
 
         // 啟動遊戲
