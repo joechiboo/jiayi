@@ -153,7 +153,7 @@
         <div class="score-board">
             <h1>2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">將相同數字或其倍數的方塊連結起來。</div>
+            <div class="game-info">連結相同數字或連續2倍數序列（如2→4→8），不可跳躍！</div>
         </div>
         
         <div class="game-board" id="gameBoard">
@@ -259,20 +259,23 @@
             // 相同數字總是可以連結
             if (currentValue === lastValue) return true;
             
-            // 檢查整個連結序列是否符合遞增倍數規則
+            // 檢查整個連結序列是否符合連續2的倍數規則
             const allValues = [...existingCells.map(cell => cell.value), currentValue];
             
-            // 檢查序列是否為有效的倍數序列（只能遞增，不能回退）
+            // 檢查序列是否為有效的連續2的倍數序列
             for (let i = 1; i < allValues.length; i++) {
                 const prev = allValues[i-1];
                 const curr = allValues[i];
                 
-                // 允許相同數字或當前數字是前一個的倍數
-                if (curr !== prev && curr % prev !== 0) {
+                // 允許相同數字
+                if (curr === prev) continue;
+                
+                // 檢查是否為連續的2的倍數（必須是前一個的2倍）
+                if (curr !== prev * 2) {
                     return false;
                 }
                 
-                // 不允許數字變小（除非相同）
+                // 不允許數字變小
                 if (curr < prev) {
                     return false;
                 }
@@ -460,9 +463,9 @@
                             if (newRow >= 0 && newRow < ROWS && newCol >= 0 && newCol < COLS) {
                                 const neighborValue = gameBoard[newRow][newCol];
                                 
-                                // 檢查是否可以連結 (相同數字或鄰居是當前的倍數)
+                                // 檢查是否可以連結 (相同數字或鄰居是當前的2倍)
                                 if (currentValue === neighborValue || 
-                                    neighborValue % currentValue === 0) {
+                                    neighborValue === currentValue * 2) {
                                     return false; // 還有可連結的數字，遊戲未結束
                                 }
                             }
