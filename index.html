@@ -61,6 +61,45 @@
             border-color: rgba(255,255,255,0.5);
         }
         
+        .game-card.disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+            pointer-events: none;
+            background: rgba(255,255,255,0.1) !important;
+            border: 2px solid rgba(255,255,255,0.2);
+            filter: grayscale(50%);
+            position: relative;
+        }
+        
+        .game-card.disabled::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                135deg,
+                transparent 40%,
+                rgba(255, 0, 0, 0.6) 48%,
+                rgba(255, 0, 0, 0.8) 50%,
+                rgba(255, 0, 0, 0.6) 52%,
+                transparent 60%
+            );
+            border-radius: 10px;
+            pointer-events: none;
+        }
+        
+        .coming-soon {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        
         .game-title {
             font-size: 1.8em;
             font-weight: bold;
@@ -129,6 +168,12 @@
                     支援鍵盤和觸控操作，挑戰你的反應速度！
                 </div>
             </a>
+            
+            <div class="game-card disabled">
+                <div class="game-title">🃏 卡牌遊戲</div>
+                
+                <div class="coming-soon">🚧 建構中...</div>
+            </div>
         </div>
         
         <div class="footer">
