@@ -258,7 +258,7 @@
 <body>
     <div class="game-container">
         <div class="score-board">
-            <h1>2248 遊戲</h1>
+            <h1 onclick="toggleTestPanel()" style="cursor: pointer; user-select: none;" title="點擊切換測試面板">2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
             <div class="game-info">將相同數字或其倍數的方塊連結起來！</div>
         </div>
@@ -480,19 +480,22 @@
                 return false; // 無法獲取位置，不取消
             }
             
-            // 計算最後一個格子的中心位置
-            const lastCellCenter = getCellScreenCenter(lastCell.row, lastCell.col);
+            // 獲取放開位置對應的格子
+            const releaseCell = getCellFromPosition(clientX, clientY);
             
-            // 計算距離
-            const distance = Math.sqrt(
-                Math.pow(clientX - lastCellCenter.x, 2) + 
-                Math.pow(clientY - lastCellCenter.y, 2)
-            );
+            if (!releaseCell) {
+                return true; // 放開位置不在棋盤內，取消
+            }
             
-            // 如果距離超過格子大小的1.5倍，則取消
-            const { cellSize } = getCellDimensions();
-            const cancelThreshold = cellSize * 1.5;
-            return distance > cancelThreshold;
+            // 檢查放開位置是否與最後一個選中格子相鄰（包括八個方向）
+            const rowDiff = Math.abs(releaseCell.row - lastCell.row);
+            const colDiff = Math.abs(releaseCell.col - lastCell.col);
+            
+            // 如果放開位置與最後一格相同或相鄰（八個方向），則確認
+            const isAdjacentOrSame = rowDiff <= 1 && colDiff <= 1;
+            
+            // 返回是否應該取消：如果不是相鄰或相同位置，則取消
+            return !isAdjacentOrSame;
         }
         
         // 獲取格子在螢幕上的中心位置
@@ -527,34 +530,59 @@
             return isValidConnection(currentValue, lastValue, selectedCells);
         }
         
+        // 檢查一個數字是否是2的倍數
+        function isPowerOfTwo(num) {
+            return num > 0 && (num & (num - 1)) === 0;
+        }
+        
         // 檢查連結是否有效
         function isValidConnection(currentValue, lastValue, existingCells) {
-            // 相同數字總是可以連結
-            if (currentValue === lastValue) return true;
-            
-            // 檢查整個連結序列是否符合連續2的倍數規則
-            const allValues = [...existingCells.map(cell => cell.value), currentValue];
-            
-            // 檢查序列是否為有效的連續2的倍數序列
-            for (let i = 1; i < allValues.length; i++) {
-                const prev = allValues[i-1];
-                const curr = allValues[i];
-                
-                // 允許相同數字
-                if (curr === prev) continue;
-                
-                // 檢查是否為連續的2的倍數（必須是前一個的2倍）
-                if (curr !== prev * 2) {
-                    return false;
-                }
-                
-                // 不允許數字變小
-                if (curr < prev) {
-                    return false;
-                }
+            // 首先檢查數字是否變小（不允許）
+            if (currentValue < lastValue) {
+                return false;
             }
             
-            return true;
+            // 計算目前的總和（不包括當前值）
+            const currentSum = existingCells.reduce((sum, cell) => sum + cell.value, 0);
+            
+            // 相同數字可以連結，但需檢查總和規則
+            if (currentValue === lastValue) {
+                const newSum = currentSum + currentValue;
+                const targetValue = getNextPowerOfTwo(newSum);
+                const halfTarget = targetValue / 2;
+                return newSum >= halfTarget;
+            }
+            
+            // 對於不同數字：
+            // 檢查目前總和（進位後如果需要）是否達到當前值的一半
+            let effectiveCurrentSum;
+            
+            // 如果目前總和已經是2的倍數，不需要進位
+            if (isPowerOfTwo(currentSum)) {
+                effectiveCurrentSum = currentSum;
+            } else {
+                // 需要進位到下一個2的倍數
+                effectiveCurrentSum = getNextPowerOfTwo(currentSum);
+            }
+            
+            // 如果有效總和達到當前值的一半，可以連接
+            if (effectiveCurrentSum >= currentValue / 2) {
+                const newSum = currentSum + currentValue;
+                const targetValue = getNextPowerOfTwo(newSum);
+                const halfTarget = targetValue / 2;
+                return newSum >= halfTarget;
+            }
+            
+            // 否則必須是嚴格2倍關係
+            if (currentValue !== lastValue * 2) {
+                return false;
+            }
+            
+            const newSum = currentSum + currentValue;
+            const targetValue = getNextPowerOfTwo(newSum);
+            const halfTarget = targetValue / 2;
+            
+            return newSum >= halfTarget;
         }
 
         // 更新格子樣式
@@ -763,8 +791,172 @@
             return { x, y };
         }
 
+        // 測試案例
+        function runTests() {
+            console.log("=== 2248 連線規則測試 ===");
+            
+            const testCases = [
+                // 基本規則測試
+                { sequence: [2, 2], expected: true, description: "2+2 ✓" },
+                { sequence: [4, 4], expected: true, description: "4+4 ✓" },
+                { sequence: [4, 2], expected: false, description: "4+2 ✗ (逆向)" },
+                
+                // 應該成功的案例 - 嚴格2倍或相同數字
+                { sequence: [8, 8], expected: true, description: "8+8" },
+                { sequence: [16, 16], expected: true, description: "16+16" },
+                { sequence: [2, 2, 4], expected: true, description: "2+2+4" },                
+                { sequence: [4, 4, 8], expected: true, description: "4+4+8" },
+                { sequence: [8, 8, 16], expected: true, description: "8+8+16" },
+                { sequence: [2, 4], expected: true, description: "2+4 (2倍關係)" },
+                { sequence: [4, 8], expected: true, description: "4+8 (2倍關係)" },
+                { sequence: [2, 2, 8], expected: true, description: "2+2+8" },
+                { sequence: [8, 16], expected: true, description: "8+16 (2倍關係)" },
+                
+                // 應該失敗的案例 - 逆向連線
+                { sequence: [8, 4], expected: false, description: "8+4 ✗ (逆向)" },
+                { sequence: [16, 8], expected: false, description: "16+8 ✗ (逆向)" },
+                { sequence: [8, 8, 4], expected: false, description: "8+8+4 ✗ (逆向)" },
+                
+                // 進位規則測試 - 2的倍數不需要進位
+                { sequence: [16, 16, 16, 128], expected: true, description: "16+16+16+128 (48不是2的倍數→64≥64)" },
+                { sequence: [4, 4, 4, 4, 32], expected: true, description: "4+4+4+4+32 (16已是2的倍數≥16)" },
+                { sequence: [2, 2, 2, 16], expected: true, description: "2+2+2+16 (6→8≥8)" },
+                { sequence: [4, 4, 4, 32], expected: true, description: "4+4+4+32 (12→16≥16)" },
+                
+                // 應該失敗的案例 - 跳躍太大
+                { sequence: [8, 8, 64], expected: false, description: "8+8+64 (16→32<32)" },
+                { sequence: [4, 4, 4, 4, 128], expected: false, description: "4+4+4+4+128 (16→32<64)" },
+                { sequence: [4, 16], expected: false, description: "4+16 (4倍跳躍)" },
+                { sequence: [2, 8], expected: false, description: "2+8 (4倍跳躍)" },                
+            ];
+            
+            let passCount = 0;
+            let totalCount = testCases.length;
+            
+            testCases.forEach((testCase, index) => {
+                const result = testConnectionSequence(testCase.sequence);
+                const passed = result === testCase.expected;
+                
+                console.log(`測試 ${index + 1}: ${testCase.description}`);
+                console.log(`  序列: [${testCase.sequence.join(', ')}]`);
+                console.log(`  期望: ${testCase.expected ? '✓' : '✗'}, 實際: ${result ? '✓' : '✗'}`);
+                console.log(`  結果: ${passed ? '通過' : '失敗'}`);
+                console.log('');
+                
+                if (passed) passCount++;
+            });
+            
+            console.log(`=== 測試結果: ${passCount}/${totalCount} 通過 ===`);
+            
+            // 在頁面上顯示測試結果
+            showTestResults(testCases, passCount, totalCount);
+        }
+        
+        // 測試連線序列是否有效
+        function testConnectionSequence(sequence) {
+            if (sequence.length < 2) return false;
+            
+            // 模擬連線過程
+            let existingCells = [{ value: sequence[0] }];
+            
+            for (let i = 1; i < sequence.length; i++) {
+                const currentValue = sequence[i];
+                const lastValue = sequence[i-1];
+                
+                const isValid = isValidConnection(currentValue, lastValue, existingCells);
+                if (!isValid) {
+                    return false;
+                }
+                
+                // 添加到已選擇的格子
+                existingCells.push({ value: currentValue });
+            }
+            
+            return true;
+        }
+        
+        // 在頁面上顯示測試結果
+        function showTestResults(testCases, passCount, totalCount) {
+            // 檢查是否已存在測試結果面板
+            let existingPanel = document.getElementById('testResultsPanel');
+            if (existingPanel) {
+                existingPanel.remove();
+                return;
+            }
+            
+            // 創建測試結果顯示區域
+            const testDiv = document.createElement('div');
+            testDiv.id = 'testResultsPanel';
+            testDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                width: 300px;
+                background: rgba(255, 255, 255, 0.95);
+                border: 2px solid #333;
+                border-radius: 10px;
+                padding: 15px;
+                max-height: 70vh;
+                overflow-y: auto;
+                z-index: 10000;
+                font-family: monospace;
+                font-size: 11px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                backdrop-filter: blur(5px);
+            `;
+            
+            let html = `<h4 onclick="toggleTestDetails()" style="margin: 0 0 10px 0; cursor: pointer; user-select: none; border-bottom: 1px solid #ccc; padding-bottom: 5px;">📊 測試結果: ${passCount}/${totalCount} 通過 (點擊切換)</h4>`;
+            
+            html += `<div id="testDetails" style="display: none;">`;
+            
+            testCases.forEach((testCase, index) => {
+                const result = testConnectionSequence(testCase.sequence);
+                const passed = result === testCase.expected;
+                const color = passed ? '#28a745' : '#dc3545';
+                const icon = passed ? '✅' : '❌';
+                
+                html += `
+                    <div style="margin-bottom: 8px; padding: 5px; background: ${passed ? '#f8f9fa' : '#fff5f5'}; border-radius: 3px; border-left: 3px solid ${color};">
+                        <div style="font-weight: bold; color: ${color};">${icon} ${testCase.description}</div>
+                        <div style="font-size: 10px; color: #666; margin-top: 2px;">
+                            序列: [${testCase.sequence.join(', ')}]<br>
+                            期望: ${testCase.expected ? '✓' : '✗'} | 實際: ${result ? '✓' : '✗'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            html += `<button onclick="document.getElementById('testResultsPanel').remove()" style="margin-top: 10px; padding: 5px 15px; width: 100%; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">關閉面板</button>`;
+            
+            testDiv.innerHTML = html;
+            document.body.appendChild(testDiv);
+        }
+        
+        // 切換測試詳情顯示
+        function toggleTestDetails() {
+            const details = document.getElementById('testDetails');
+            if (details) {
+                details.style.display = details.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+        
+        // 切換測試面板顯示/隱藏
+        function toggleTestPanel() {
+            const panel = document.getElementById('testResultsPanel');
+            if (panel) {
+                // 面板存在，移除它
+                panel.remove();
+            } else {
+                // 面板不存在，重新運行測試並顯示
+                runTests();
+            }
+        }
+        
         // 啟動遊戲
         initGame();
+        
+        // 不自動運行測試，等用戶點擊標題時才顯示
     </script>
     
     <a href="../" class="back-button">回到首頁</a>
