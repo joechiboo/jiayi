@@ -9,7 +9,8 @@
       "Bash(mkdir:*)",
       "Bash(mv:*)",
       "WebFetch(domain:joechiboo.github.io)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(git config:*)"
     ],
     "deny": []
   }
