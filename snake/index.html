@@ -34,7 +34,7 @@
 
         .score-board {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .score-board h1 {
@@ -50,12 +50,6 @@
             margin: 10px 0;
         }
 
-        .game-info {
-            text-align: center;
-            color: #666;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
 
         .game-canvas {
             border: 3px solid #333;
@@ -103,9 +97,9 @@
         .direction-pad {
             display: grid;
             grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(3, 60px);
+            grid-template-rows: repeat(2, 60px);
             gap: 5px;
-            margin-top: 15px;
+            margin-top: 10px;
         }
 
         .direction-btn {
@@ -132,16 +126,16 @@
         }
 
         .direction-btn.up { grid-column: 2; grid-row: 1; }
-        .direction-btn.down { grid-column: 2; grid-row: 3; }
+        .direction-btn.down { grid-column: 2; grid-row: 2; }
         .direction-btn.left { grid-column: 1; grid-row: 2; }
         .direction-btn.right { grid-column: 3; grid-row: 2; }
 
         .touch-instructions {
             text-align: center;
             color: #666;
-            margin-top: 15px;
+            margin-top: 10px;
             font-size: 14px;
-            padding: 10px;
+            padding: 8px;
             background: rgba(0,0,0,0.05);
             border-radius: 8px;
         }
@@ -236,6 +230,49 @@
             margin-right: 6px;
         }
 
+        .speed-control {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .speed-control label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .speed-btn {
+            padding: 8px 12px;
+            background: #e0e0e0;
+            color: #333;
+            border: 2px solid #ccc;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 60px;
+        }
+
+        .speed-btn:hover {
+            background: #d0d0d0;
+            transform: translateY(-1px);
+        }
+
+        .speed-btn.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #45a049;
+        }
+
+        .speed-btn.active:hover {
+            background: #45a049;
+        }
+
         /* 平板響應式設計 - 橫屏 */
         @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
             .game-container {
@@ -253,10 +290,6 @@
                 font-size: 28px;
             }
             
-            .game-info {
-                font-size: 18px;
-                margin-bottom: 20px;
-            }
             
             .game-canvas {
                 width: 500px !important;
@@ -266,9 +299,9 @@
             
             .direction-pad {
                 grid-template-columns: repeat(3, 80px);
-                grid-template-rows: repeat(3, 80px);
+                grid-template-rows: repeat(2, 80px);
                 gap: 8px;
-                margin-top: 25px;
+                margin-top: 15px;
             }
             
             .direction-btn {
@@ -278,12 +311,22 @@
             .touch-instructions {
                 font-size: 16px;
                 padding: 12px;
-                margin-top: 20px;
+                margin-top: 12px;
             }
             
             .btn {
                 padding: 15px 25px;
                 font-size: 18px;
+            }
+            
+            .speed-control label {
+                font-size: 20px;
+            }
+            
+            .speed-btn {
+                padding: 12px 16px;
+                font-size: 16px;
+                min-width: 80px;
             }
         }
         
@@ -304,10 +347,6 @@
                 font-size: 26px;
             }
             
-            .game-info {
-                font-size: 16px;
-                margin-bottom: 18px;
-            }
             
             .game-canvas {
                 width: 450px !important;
@@ -317,9 +356,9 @@
             
             .direction-pad {
                 grid-template-columns: repeat(3, 75px);
-                grid-template-rows: repeat(3, 75px);
+                grid-template-rows: repeat(2, 75px);
                 gap: 8px;
-                margin-top: 20px;
+                margin-top: 12px;
             }
             
             .direction-btn {
@@ -329,12 +368,22 @@
             .touch-instructions {
                 font-size: 16px;
                 padding: 12px;
-                margin-top: 18px;
+                margin-top: 10px;
             }
             
             .btn {
                 padding: 14px 24px;
                 font-size: 18px;
+            }
+            
+            .speed-control label {
+                font-size: 18px;
+            }
+            
+            .speed-btn {
+                padding: 10px 14px;
+                font-size: 15px;
+                min-width: 75px;
             }
         }
         
@@ -354,7 +403,7 @@
             
             .direction-pad {
                 grid-template-columns: repeat(3, 50px);
-                grid-template-rows: repeat(3, 50px);
+                grid-template-rows: repeat(2, 50px);
             }
             
             .touch-instructions {
@@ -384,7 +433,12 @@
         <div class="score-board">
             <h1>🐍 貪食蛇</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">可穿牆！每吃10個食物會加速！</div>
+            <div class="speed-control">
+                <label>速度: </label>
+                <button class="speed-btn" onclick="setGameSpeed('slow')" id="slowBtn">慢 🐌</button>
+                <button class="speed-btn active" onclick="setGameSpeed('normal')" id="normalBtn">中 🚀</button>
+                <button class="speed-btn" onclick="setGameSpeed('fast')" id="fastBtn">快 ⚡</button>
+            </div>
         </div>
         
         <canvas id="gameCanvas" class="game-canvas" width="300" height="300"></canvas>
@@ -427,7 +481,9 @@
         let score = 0;
         let gameRunning = false;
         let gameLoop = null;
-        let gameSpeed = 150; // 初始速度 (毫秒)
+        let baseGameSpeed = 200; // 基礎速度 (毫秒)
+        let gameSpeed = 200; // 當前速度 (毫秒)
+        let speedMode = 'normal'; // 速度模式: slow, normal, fast
         let foodEaten = 0; // 已吃食物數量
 
         // 設置遊戲畫布大小（響應式）
@@ -457,6 +513,99 @@
             // 設置畫布屬性
             canvas.width = CANVAS_SIZE;
             canvas.height = CANVAS_SIZE;
+        }
+
+        // 設置遊戲速度
+        function setGameSpeed(mode) {
+            speedMode = mode;
+            
+            // 移除所有按鈕的 active 類別
+            document.querySelectorAll('.speed-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // 計算當前已經加速了幾次
+            const accelerationCount = Math.floor(foodEaten / 15);
+            
+            // 設定基礎速度和激活對應按鈕
+            switch (mode) {
+                case 'slow':
+                    baseGameSpeed = 300; // 慢速：300ms
+                    document.getElementById('slowBtn').classList.add('active');
+                    // 重新計算當前速度（考慮已有的加速）
+                    gameSpeed = Math.max(200, baseGameSpeed - (accelerationCount * 8));
+                    break;
+                case 'normal':
+                    baseGameSpeed = 200; // 中速：200ms (預設)
+                    document.getElementById('normalBtn').classList.add('active');
+                    // 重新計算當前速度（考慮已有的加速）
+                    gameSpeed = Math.max(100, baseGameSpeed - (accelerationCount * 12));
+                    break;
+                case 'fast':
+                    baseGameSpeed = 120; // 快速：120ms
+                    document.getElementById('fastBtn').classList.add('active');
+                    // 重新計算當前速度（考慮已有的加速）
+                    gameSpeed = Math.max(60, baseGameSpeed - (accelerationCount * 15));
+                    break;
+            }
+            
+            // 如果遊戲正在運行，立即更新速度
+            if (gameRunning && gameLoop) {
+                updateGameSpeed();
+            }
+            
+            // 顯示速度變更提示（遊戲中）
+            if (gameRunning) {
+                const speedNames = { slow: '慢速 🐌', normal: '中速 🚀', fast: '快速 ⚡' };
+                showSpeedChangeToast(speedNames[mode]);
+            }
+        }
+
+        // 顯示速度變更提示
+        function showSpeedChangeToast(speedName) {
+            // 移除現有的提示
+            const existingToast = document.querySelector('.speed-toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // 創建新的提示
+            const toast = document.createElement('div');
+            toast.className = 'speed-toast';
+            toast.textContent = `已切換至 ${speedName}`;
+            toast.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 25px;
+                font-size: 18px;
+                font-weight: bold;
+                z-index: 10000;
+                animation: fadeInOut 2s ease-in-out forwards;
+            `;
+            
+            // 添加動畫樣式
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeInOut {
+                    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                    20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                }
+            `;
+            
+            document.head.appendChild(style);
+            document.body.appendChild(toast);
+            
+            // 2秒後自動移除
+            setTimeout(() => {
+                if (toast && toast.parentNode) {
+                    toast.remove();
+                }
+            }, 2000);
         }
 
         // 初始化
@@ -499,7 +648,7 @@
             snake = [{ x: centerX, y: centerY }];
             direction = { x: 0, y: 0 };
             score = 0;
-            gameSpeed = 150;
+            gameSpeed = baseGameSpeed;
             foodEaten = 0;
             scoreElement.textContent = score;
             generateFood();
@@ -535,10 +684,29 @@
                 scoreElement.textContent = score;
                 generateFood();
                 
-                // 每吃10個食物加快速度
-                if (foodEaten % 10 === 0 && gameSpeed > 50) {
-                    gameSpeed = Math.max(50, gameSpeed - 10); // 最快不超過50ms
-                    updateGameSpeed();
+                // 根據選擇的速度模式調整加速幅度
+                if (foodEaten % 15 === 0) { // 改為每15個食物才加速
+                    let minSpeed, speedDecrease;
+                    
+                    switch (speedMode) {
+                        case 'slow':
+                            minSpeed = 200; // 慢速模式最快不超過200ms
+                            speedDecrease = 8; // 每次減少8ms
+                            break;
+                        case 'normal':
+                            minSpeed = 100; // 中速模式最快不超過100ms
+                            speedDecrease = 12; // 每次減少12ms
+                            break;
+                        case 'fast':
+                            minSpeed = 60; // 快速模式最快不超過60ms
+                            speedDecrease = 15; // 每次減少15ms
+                            break;
+                    }
+                    
+                    if (gameSpeed > minSpeed) {
+                        gameSpeed = Math.max(minSpeed, gameSpeed - speedDecrease);
+                        updateGameSpeed();
+                    }
                 }
                 
             } else {
