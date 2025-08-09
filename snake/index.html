@@ -236,8 +236,110 @@
             margin-right: 6px;
         }
 
+        /* 平板響應式設計 - 橫屏 */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+            .game-container {
+                padding: 30px;
+                max-width: 95vw;
+                max-height: 95vh;
+            }
+            
+            .score-board h1 {
+                font-size: 36px;
+                margin: 15px 0;
+            }
+            
+            .score {
+                font-size: 28px;
+            }
+            
+            .game-info {
+                font-size: 18px;
+                margin-bottom: 20px;
+            }
+            
+            .game-canvas {
+                width: 500px !important;
+                height: 500px !important;
+                border-width: 4px;
+            }
+            
+            .direction-pad {
+                grid-template-columns: repeat(3, 80px);
+                grid-template-rows: repeat(3, 80px);
+                gap: 8px;
+                margin-top: 25px;
+            }
+            
+            .direction-btn {
+                font-size: 28px;
+            }
+            
+            .touch-instructions {
+                font-size: 16px;
+                padding: 12px;
+                margin-top: 20px;
+            }
+            
+            .btn {
+                padding: 15px 25px;
+                font-size: 18px;
+            }
+        }
+        
+        /* 平板響應式設計 - 直屏 */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+            .game-container {
+                padding: 25px;
+                max-width: 90vw;
+                max-height: 90vh;
+            }
+            
+            .score-board h1 {
+                font-size: 32px;
+                margin: 15px 0;
+            }
+            
+            .score {
+                font-size: 26px;
+            }
+            
+            .game-info {
+                font-size: 16px;
+                margin-bottom: 18px;
+            }
+            
+            .game-canvas {
+                width: 450px !important;
+                height: 450px !important;
+                border-width: 4px;
+            }
+            
+            .direction-pad {
+                grid-template-columns: repeat(3, 75px);
+                grid-template-rows: repeat(3, 75px);
+                gap: 8px;
+                margin-top: 20px;
+            }
+            
+            .direction-btn {
+                font-size: 26px;
+            }
+            
+            .touch-instructions {
+                font-size: 16px;
+                padding: 12px;
+                margin-top: 18px;
+            }
+            
+            .btn {
+                padding: 14px 24px;
+                font-size: 18px;
+            }
+        }
+        
         /* 手機響應式設計 */
-        @media (max-height: 700px) {
+        @media (max-height: 700px) and (max-width: 767px) {
             .game-container {
                 padding: 15px;
             }
@@ -314,9 +416,9 @@
         const scoreElement = document.getElementById('score');
 
         // 遊戲參數
-        const GRID_SIZE = 15;
-        const CANVAS_SIZE = 300;
-        const GRID_COUNT = CANVAS_SIZE / GRID_SIZE;
+        let GRID_SIZE = 15;
+        let CANVAS_SIZE = 300;
+        let GRID_COUNT = CANVAS_SIZE / GRID_SIZE;
 
         // 遊戲變數
         let snake = [{ x: 10, y: 10 }];
@@ -328,8 +430,38 @@
         let gameSpeed = 150; // 初始速度 (毫秒)
         let foodEaten = 0; // 已吃食物數量
 
+        // 設置遊戲畫布大小（響應式）
+        function setupCanvas() {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // 平板尺寸檢測
+            if (viewportWidth >= 768 && viewportWidth <= 1024) {
+                if (viewportWidth > viewportHeight) {
+                    // 橫屏平板
+                    CANVAS_SIZE = 500;
+                    GRID_SIZE = 20;
+                } else {
+                    // 直屏平板
+                    CANVAS_SIZE = 450;
+                    GRID_SIZE = 18;
+                }
+            } else {
+                // 手機和桌面預設
+                CANVAS_SIZE = 300;
+                GRID_SIZE = 15;
+            }
+            
+            GRID_COUNT = CANVAS_SIZE / GRID_SIZE;
+            
+            // 設置畫布屬性
+            canvas.width = CANVAS_SIZE;
+            canvas.height = CANVAS_SIZE;
+        }
+
         // 初始化
         function init() {
+            setupCanvas();
             drawGame();
         }
 
@@ -357,7 +489,14 @@
                 clearInterval(gameLoop);
                 gameLoop = null;
             }
-            snake = [{ x: 10, y: 10 }];
+            
+            // 重新設置畫布大小（以防螢幕方向改變）
+            setupCanvas();
+            
+            // 重置遊戲狀態，確保蛇的初始位置在新的網格範圍內
+            const centerX = Math.floor(GRID_COUNT / 2);
+            const centerY = Math.floor(GRID_COUNT / 2);
+            snake = [{ x: centerX, y: centerY }];
             direction = { x: 0, y: 0 };
             score = 0;
             gameSpeed = 150;
@@ -570,6 +709,27 @@
 
             touchStartX = 0;
             touchStartY = 0;
+        });
+
+        // 處理螢幕方向變化和視窗大小調整
+        window.addEventListener('resize', () => {
+            // 延遲一點以等待CSS變化完成
+            setTimeout(() => {
+                if (!gameRunning) {
+                    setupCanvas();
+                    drawGame();
+                }
+            }, 100);
+        });
+
+        // 處理螢幕方向變化（針對行動裝置）
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                if (!gameRunning) {
+                    setupCanvas();
+                    drawGame();
+                }
+            }, 300);
         });
 
         // 初始化遊戲

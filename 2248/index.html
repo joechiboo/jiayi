@@ -206,8 +206,98 @@
             margin-right: 6px;
         }
         
+        /* 平板響應式設計 - 橫屏 */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+            .game-container {
+                padding: 20px;
+                max-width: 95vw;
+                max-height: 95vh;
+            }
+            
+            .score-board h1 {
+                font-size: 36px;
+                margin: 15px 0;
+            }
+            
+            .score {
+                font-size: 28px;
+            }
+            
+            .game-info {
+                font-size: 16px;
+                margin-bottom: 20px;
+            }
+            
+            .game-board {
+                grid-template-columns: repeat(5, 75px);
+                grid-template-rows: repeat(7, 75px);
+                gap: 6px;
+                padding: 12px;
+            }
+            
+            .cell {
+                font-size: 20px;
+            }
+            
+            .cell[data-value="128"],
+            .cell[data-value="256"],
+            .cell[data-value="512"] {
+                font-size: 18px;
+            }
+            
+            .cell[data-value="1024"],
+            .cell[data-value="2048"] {
+                font-size: 16px;
+            }
+        }
+        
+        /* 平板響應式設計 - 直屏 */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+            .game-container {
+                padding: 25px;
+                max-width: 90vw;
+                max-height: 90vh;
+            }
+            
+            .score-board h1 {
+                font-size: 32px;
+                margin: 15px 0;
+            }
+            
+            .score {
+                font-size: 26px;
+            }
+            
+            .game-info {
+                font-size: 16px;
+                margin-bottom: 20px;
+            }
+            
+            .game-board {
+                grid-template-columns: repeat(5, 70px);
+                grid-template-rows: repeat(7, 70px);
+                gap: 6px;
+                padding: 12px;
+            }
+            
+            .cell {
+                font-size: 20px;
+            }
+            
+            .cell[data-value="128"],
+            .cell[data-value="256"],
+            .cell[data-value="512"] {
+                font-size: 18px;
+            }
+            
+            .cell[data-value="1024"],
+            .cell[data-value="2048"] {
+                font-size: 16px;
+            }
+        }
+        
         /* 手機響應式設計 */
-        @media (max-height: 700px) {
+        @media (max-height: 700px) and (max-width: 767px) {
             .game-container {
                 padding: 10px;
             }
@@ -377,9 +467,20 @@
             const viewportHeight = window.innerHeight;
             const viewportWidth = window.innerWidth;
             
-            if (viewportWidth <= 400) {
+            // 平板尺寸檢測
+            if (viewportWidth >= 768 && viewportWidth <= 1024) {
+                if (viewportWidth > viewportHeight) {
+                    // 橫屏平板
+                    return { cellSize: 75, gap: 6, padding: 12 };
+                } else {
+                    // 直屏平板
+                    return { cellSize: 70, gap: 6, padding: 12 };
+                }
+            }
+            // 手機尺寸
+            else if (viewportWidth <= 400) {
                 return { cellSize: 45, gap: 3, padding: 6 };
-            } else if (viewportHeight <= 700) {
+            } else if (viewportHeight <= 700 && viewportWidth <= 767) {
                 return { cellSize: 50, gap: 4, padding: 8 };
             } else {
                 return { cellSize: 60, gap: 5, padding: 10 };
