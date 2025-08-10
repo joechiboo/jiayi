@@ -350,7 +350,7 @@
         <div class="score-board">
             <h1 onclick="toggleTestPanel()" style="cursor: pointer; user-select: none;" title="點擊切換測試面板">2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">先連結相同數字，再連續加更大數字！</div>
+            <div class="game-info">總和達到目標數字才能繼續連結！</div>
         </div>
         
         <div class="game-board" id="gameBoard">
@@ -662,9 +662,10 @@
                     }
                 }
                 
-                // 如果有至少2個相同數字作為基礎，允許繼續加遞增數字
                 if (sameCount >= 2) {
-                    return true;
+                    // 檢查當前總和是否達到要連結的數字
+                    const currentSum = existingCells.reduce((sum, cell) => sum + cell.value, 0);
+                    return currentSum >= currentValue;
                 }
             }
             
