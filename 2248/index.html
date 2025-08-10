@@ -350,7 +350,7 @@
         <div class="score-board">
             <h1 onclick="toggleTestPanel()" style="cursor: pointer; user-select: none;" title="點擊切換測試面板">2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">連結方塊，總和是2的倍數才能消除！</div>
+            <div class="game-info">先連結相同數字，再加上更大的數字！</div>
         </div>
         
         <div class="game-board" id="gameBoard">
@@ -636,23 +636,30 @@
             return num > 0 && (num & (num - 1)) === 0;
         }
         
-        // 檢查連結是否有效
+        // 檢查連結是否有效  
         function isValidConnection(currentValue, lastValue, existingCells) {
-            // 檢查數字是否變小（不允許）
+            // 檢查數字不能變小
             if (currentValue < lastValue) {
                 return false;
             }
             
-            // 如果是相同數字，允許繼續連結（中間步驟可能不是2的倍數）
+            // 如果是相同數字，總是可以連結
             if (currentValue === lastValue) {
                 return true;
             }
             
-            // 對於不同數字，檢查總和是否是2的倍數
-            const currentSum = existingCells.reduce((sum, cell) => sum + cell.value, 0);
-            const newSum = currentSum + currentValue;
+            // 對於不同數字，只有在前面已經有至少2個相同數字的情況下才能連結
+            if (existingCells.length >= 2) {
+                // 檢查是否前面所有數字都相同
+                const firstValue = existingCells[0].value;
+                const allSame = existingCells.every(cell => cell.value === firstValue);
+                
+                if (allSame) {
+                    return true; // 可以在相同數字基礎上加不同數字
+                }
+            }
             
-            return isPowerOfTwo(newSum);
+            return false;
         }
 
         // 更新格子樣式
@@ -675,17 +682,6 @@
         // 執行合併
         function executeMove() {
             if (selectedCells.length < 2) return;
-            
-            // 檢查最終總和是否是2的倍數
-            const finalSum = selectedCells.reduce((sum, cell) => sum + cell.value, 0);
-            if (!isPowerOfTwo(finalSum)) {
-                // 如果最終總和不是2的倍數，取消操作
-                selectedCells = [];
-                connectionLines = [];
-                updateCellStyles();
-                clearConnections();
-                return;
-            }
             
             // 計算合併後的數字和分數
             const mergedValue = calculateMergedValue(selectedCells);
