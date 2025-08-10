@@ -350,7 +350,7 @@
         <div class="score-board">
             <h1 onclick="toggleTestPanel()" style="cursor: pointer; user-select: none;" title="點擊切換測試面板">2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">先連結相同數字，再加上更大的數字！</div>
+            <div class="game-info">先連結相同數字，再連續加更大數字！</div>
         </div>
         
         <div class="game-board" id="gameBoard">
@@ -648,14 +648,23 @@
                 return true;
             }
             
-            // 對於不同數字，只有在前面已經有至少2個相同數字的情況下才能連結
+            // 對於不同數字，檢查是否已經建立了"相同數字基礎"
             if (existingCells.length >= 2) {
-                // 檢查是否前面所有數字都相同
+                // 檢查前面是否有至少2個相同數字作為基礎
                 const firstValue = existingCells[0].value;
-                const allSame = existingCells.every(cell => cell.value === firstValue);
+                let sameCount = 0;
                 
-                if (allSame) {
-                    return true; // 可以在相同數字基礎上加不同數字
+                for (let cell of existingCells) {
+                    if (cell.value === firstValue) {
+                        sameCount++;
+                    } else {
+                        break; // 一旦遇到不同數字就停止計算
+                    }
+                }
+                
+                // 如果有至少2個相同數字作為基礎，允許繼續加遞增數字
+                if (sameCount >= 2) {
+                    return true;
                 }
             }
             
