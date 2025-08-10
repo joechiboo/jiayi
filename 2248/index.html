@@ -350,7 +350,7 @@
         <div class="score-board">
             <h1 onclick="toggleTestPanel()" style="cursor: pointer; user-select: none;" title="點擊切換測試面板">2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">連結相同或遞增的數字方塊消除！</div>
+            <div class="game-info">連結方塊，總和是2的倍數才能消除！</div>
         </div>
         
         <div class="game-board" id="gameBoard">
@@ -643,8 +643,12 @@
                 return false;
             }
             
-            // 允許相等或遞增的數字連結
-            return true;
+            // 計算加入當前數字後的總和
+            const currentSum = existingCells.reduce((sum, cell) => sum + cell.value, 0);
+            const newSum = currentSum + currentValue;
+            
+            // 檢查總和是否是2的倍數
+            return isPowerOfTwo(newSum);
         }
 
         // 更新格子樣式
