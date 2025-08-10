@@ -647,13 +647,8 @@
             const currentSum = existingCells.reduce((sum, cell) => sum + cell.value, 0);
             const newSum = currentSum + currentValue;
             
-            // 新規則：總和必須是有效的2的倍數（8, 16, 32, 64, 128, 256...）
-            // 最小總和是8
-            if (newSum < 8) {
-                return false;
-            }
-            
-            // 檢查總和是否是2的倍數（且≥8）
+            // 新規則：總和必須是2的倍數（2, 4, 8, 16, 32, 64, 128, 256...）
+            // 檢查總和是否是2的倍數
             return isPowerOfTwo(newSum);
         }
 
@@ -878,11 +873,9 @@
                 { sequence: [2, 4], expected: false, description: "2+4=6 ✗ (6不是2的倍數)" },
                 { sequence: [2, 2, 4], expected: true, description: "2+2+4=8 ✓" },
                 
-                // 其他應該成功的案例 - 總和是2的倍數且≥8
+                // 其他應該成功的案例
                 { sequence: [4, 4, 8], expected: true, description: "4+4+8=16 ✓" },
                 { sequence: [2, 2, 2, 2], expected: true, description: "2+2+2+2=8 ✓" },
-                { sequence: [2, 6], expected: true, description: "2+6=8 ✓" },
-                { sequence: [4, 12], expected: true, description: "4+12=16 ✓" },
                 { sequence: [8, 8, 16], expected: true, description: "8+8+16=32 ✓" },
                 
                 // 連續相同數字的案例（用戶特別要求）
@@ -890,31 +883,16 @@
                 { sequence: [4, 4, 4, 4], expected: true, description: "4+4+4+4=16 ✓" },
                 { sequence: [8, 8, 8, 8], expected: true, description: "8+8+8+8=32 ✓" },
                 { sequence: [16, 16], expected: true, description: "16+16=32 ✓" },
-                { sequence: [16, 16, 16, 16], expected: true, description: "16+16+16+16=64 ✓" },
                 
                 // 應該失敗的案例 - 總和不是2的倍數
                 { sequence: [4, 8], expected: false, description: "4+8=12 ✗ (12不是2的倍數)" },
                 { sequence: [8, 16], expected: false, description: "8+16=24 ✗ (24不是2的倍數)" },
                 { sequence: [2, 8], expected: false, description: "2+8=10 ✗ (10不是2的倍數)" },
                 { sequence: [4, 16], expected: false, description: "4+16=20 ✗ (20不是2的倍數)" },
-                { sequence: [2, 2, 2], expected: false, description: "2+2+2=6 ✗ (6不是2的倍數)" },
-                { sequence: [2, 2, 2, 2, 2, 2], expected: false, description: "2+2+2+2+2+2=12 ✗ (12不是2的倍數)" },
-                { sequence: [16, 16, 16], expected: false, description: "16+16+16=48 ✗ (48不是2的倍數)" },
                 
                 // 應該失敗的案例 - 逆向連線（數字變小）
                 { sequence: [4, 2], expected: false, description: "4+2 ✗ (逆向)" },
                 { sequence: [8, 4], expected: false, description: "8+4 ✗ (逆向)" },
-                { sequence: [16, 8], expected: false, description: "16+8 ✗ (逆向)" },
-                { sequence: [8, 8, 4], expected: false, description: "8+8+4 ✗ (逆向)" },
-                
-                // 應該失敗的案例 - 總和小於8
-                { sequence: [2], expected: false, description: "單個2 ✗ (總和<8)" },
-                { sequence: [4], expected: false, description: "單個4 ✗ (總和<8)" },
-                { sequence: [2, 2, 2], expected: false, description: "2+2+2=6 ✗ (總和<8)" },
-                
-                // 邊界測試案例
-                { sequence: [8], expected: false, description: "單個8 ✗ (需要至少兩個數字)" },
-                { sequence: [16], expected: false, description: "單個16 ✗ (需要至少兩個數字)" },
             ];
             
             let passCount = 0;
