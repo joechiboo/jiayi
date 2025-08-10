@@ -350,7 +350,7 @@
         <div class="score-board">
             <h1 onclick="toggleTestPanel()" style="cursor: pointer; user-select: none;" title="點擊切換測試面板">2248 遊戲</h1>
             <div class="score">分數: <span id="score">0</span></div>
-            <div class="game-info">將相同數字或其倍數的方塊連結起來！</div>
+            <div class="game-info">連結數字方塊，總和必須是2的倍數（8, 16, 32...）才能消除！</div>
         </div>
         
         <div class="game-board" id="gameBoard">
@@ -643,47 +643,18 @@
                 return false;
             }
             
-            // 計算目前的總和（不包括當前值）
+            // 計算目前的總和（包括當前值）
             const currentSum = existingCells.reduce((sum, cell) => sum + cell.value, 0);
+            const newSum = currentSum + currentValue;
             
-            // 相同數字可以連結，但需檢查總和規則
-            if (currentValue === lastValue) {
-                const newSum = currentSum + currentValue;
-                const targetValue = getNextPowerOfTwo(newSum);
-                const halfTarget = targetValue / 2;
-                return newSum >= halfTarget;
-            }
-            
-            // 對於不同數字：
-            // 檢查目前總和（進位後如果需要）是否達到當前值的一半
-            let effectiveCurrentSum;
-            
-            // 如果目前總和已經是2的倍數，不需要進位
-            if (isPowerOfTwo(currentSum)) {
-                effectiveCurrentSum = currentSum;
-            } else {
-                // 需要進位到下一個2的倍數
-                effectiveCurrentSum = getNextPowerOfTwo(currentSum);
-            }
-            
-            // 如果有效總和達到當前值的一半，可以連接
-            if (effectiveCurrentSum >= currentValue / 2) {
-                const newSum = currentSum + currentValue;
-                const targetValue = getNextPowerOfTwo(newSum);
-                const halfTarget = targetValue / 2;
-                return newSum >= halfTarget;
-            }
-            
-            // 否則必須是嚴格2倍關係
-            if (currentValue !== lastValue * 2) {
+            // 新規則：總和必須是有效的2的倍數（8, 16, 32, 64, 128, 256...）
+            // 最小總和是8
+            if (newSum < 8) {
                 return false;
             }
             
-            const newSum = currentSum + currentValue;
-            const targetValue = getNextPowerOfTwo(newSum);
-            const halfTarget = targetValue / 2;
-            
-            return newSum >= halfTarget;
+            // 檢查總和是否是2的倍數（且≥8）
+            return isPowerOfTwo(newSum);
         }
 
         // 更新格子樣式
@@ -897,38 +868,43 @@
             console.log("=== 2248 連線規則測試 ===");
             
             const testCases = [
-                // 基本規則測試
-                { sequence: [2, 2], expected: true, description: "2+2 ✓" },
-                { sequence: [4, 4], expected: true, description: "4+4 ✓" },
+                // 基本規則測試 - 相同數字可以相連
+                { sequence: [2, 2], expected: true, description: "2+2=4 ✓" },
+                { sequence: [4, 4], expected: true, description: "4+4=8 ✓" },
+                { sequence: [8, 8], expected: true, description: "8+8=16 ✓" },
+                { sequence: [16, 16], expected: true, description: "16+16=32 ✓" },
+                
+                // 用戶要求的核心測試案例
+                { sequence: [2, 4], expected: false, description: "2+4=6 ✗ (6不是2的倍數)" },
+                { sequence: [2, 2, 4], expected: true, description: "2+2+4=8 ✓" },
+                
+                // 其他應該成功的案例 - 總和是2的倍數且≥8
+                { sequence: [4, 4, 8], expected: true, description: "4+4+8=16 ✓" },
+                { sequence: [2, 2, 2, 2], expected: true, description: "2+2+2+2=8 ✓" },
+                { sequence: [2, 6], expected: true, description: "2+6=8 ✓" },
+                { sequence: [4, 12], expected: true, description: "4+12=16 ✓" },
+                { sequence: [8, 8, 16], expected: true, description: "8+8+16=32 ✓" },
+                
+                // 應該失敗的案例 - 總和不是2的倍數
+                { sequence: [4, 8], expected: false, description: "4+8=12 ✗ (12不是2的倍數)" },
+                { sequence: [8, 16], expected: false, description: "8+16=24 ✗ (24不是2的倍數)" },
+                { sequence: [2, 8], expected: false, description: "2+8=10 ✗ (10不是2的倍數)" },
+                { sequence: [4, 16], expected: false, description: "4+16=20 ✗ (20不是2的倍數)" },
+                
+                // 應該失敗的案例 - 逆向連線（數字變小）
                 { sequence: [4, 2], expected: false, description: "4+2 ✗ (逆向)" },
-                
-                // 應該成功的案例 - 嚴格2倍或相同數字
-                { sequence: [8, 8], expected: true, description: "8+8" },
-                { sequence: [16, 16], expected: true, description: "16+16" },
-                { sequence: [2, 2, 4], expected: true, description: "2+2+4" },                
-                { sequence: [4, 4, 8], expected: true, description: "4+4+8" },
-                { sequence: [8, 8, 16], expected: true, description: "8+8+16" },
-                { sequence: [2, 4], expected: true, description: "2+4 (2倍關係)" },
-                { sequence: [4, 8], expected: true, description: "4+8 (2倍關係)" },
-                { sequence: [2, 2, 8], expected: true, description: "2+2+8" },
-                { sequence: [8, 16], expected: true, description: "8+16 (2倍關係)" },
-                
-                // 應該失敗的案例 - 逆向連線
                 { sequence: [8, 4], expected: false, description: "8+4 ✗ (逆向)" },
                 { sequence: [16, 8], expected: false, description: "16+8 ✗ (逆向)" },
                 { sequence: [8, 8, 4], expected: false, description: "8+8+4 ✗ (逆向)" },
                 
-                // 進位規則測試 - 2的倍數不需要進位
-                { sequence: [16, 16, 16, 128], expected: true, description: "16+16+16+128 (48不是2的倍數→64≥64)" },
-                { sequence: [4, 4, 4, 4, 32], expected: true, description: "4+4+4+4+32 (16已是2的倍數≥16)" },
-                { sequence: [2, 2, 2, 16], expected: true, description: "2+2+2+16 (6→8≥8)" },
-                { sequence: [4, 4, 4, 32], expected: true, description: "4+4+4+32 (12→16≥16)" },
+                // 應該失敗的案例 - 總和小於8
+                { sequence: [2], expected: false, description: "單個2 ✗ (總和<8)" },
+                { sequence: [4], expected: false, description: "單個4 ✗ (總和<8)" },
+                { sequence: [2, 2, 2], expected: false, description: "2+2+2=6 ✗ (總和<8)" },
                 
-                // 應該失敗的案例 - 跳躍太大
-                { sequence: [8, 8, 64], expected: false, description: "8+8+64 (16→32<32)" },
-                { sequence: [4, 4, 4, 4, 128], expected: false, description: "4+4+4+4+128 (16→32<64)" },
-                { sequence: [4, 16], expected: false, description: "4+16 (4倍跳躍)" },
-                { sequence: [2, 8], expected: false, description: "2+8 (4倍跳躍)" },                
+                // 邊界測試案例
+                { sequence: [8], expected: false, description: "單個8 ✗ (需要至少兩個數字)" },
+                { sequence: [16], expected: false, description: "單個16 ✗ (需要至少兩個數字)" },
             ];
             
             let passCount = 0;

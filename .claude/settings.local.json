@@ -10,7 +10,12 @@
       "Bash(mv:*)",
       "WebFetch(domain:joechiboo.github.io)",
       "Bash(npm install)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(ssh-keygen:*)",
+      "Bash(cat:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(ssh:*)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }
