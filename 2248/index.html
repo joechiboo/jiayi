@@ -643,11 +643,15 @@
                 return false;
             }
             
-            // 計算加入當前數字後的總和
+            // 如果是相同數字，允許繼續連結（中間步驟可能不是2的倍數）
+            if (currentValue === lastValue) {
+                return true;
+            }
+            
+            // 對於不同數字，檢查總和是否是2的倍數
             const currentSum = existingCells.reduce((sum, cell) => sum + cell.value, 0);
             const newSum = currentSum + currentValue;
             
-            // 檢查總和是否是2的倍數
             return isPowerOfTwo(newSum);
         }
 
@@ -671,6 +675,17 @@
         // 執行合併
         function executeMove() {
             if (selectedCells.length < 2) return;
+            
+            // 檢查最終總和是否是2的倍數
+            const finalSum = selectedCells.reduce((sum, cell) => sum + cell.value, 0);
+            if (!isPowerOfTwo(finalSum)) {
+                // 如果最終總和不是2的倍數，取消操作
+                selectedCells = [];
+                connectionLines = [];
+                updateCellStyles();
+                clearConnections();
+                return;
+            }
             
             // 計算合併後的數字和分數
             const mergedValue = calculateMergedValue(selectedCells);
