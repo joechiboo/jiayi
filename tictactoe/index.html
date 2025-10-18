@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>井字遊戲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5em;
+            margin: 0 0 30px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* 模式選擇畫面 */
+        .mode-selection {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 300px;
+        }
+
+        .mode-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .mode-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .mode-button .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .mode-button .subtitle {
+            font-size: 0.6em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* 遊戲畫面 */
+        .game-screen {
+            display: none;
+        }
+
+        .game-screen.show {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-info {
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .turn-indicator {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 30px;
+        }
+
+        /* 難度選擇器 */
+        .difficulty-selector {
+            display: none;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .difficulty-selector.show {
+            display: flex;
+        }
+
+        .difficulty-btn {
+            position: relative;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.25));
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: white;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            min-width: 80px;
+        }
+
+        .difficulty-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .difficulty-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.35));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .difficulty-btn:hover::before {
+            opacity: 1;
+        }
+
+        .difficulty-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .difficulty-btn.active {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.6), rgba(39, 174, 96, 0.7));
+            border-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 6px 25px rgba(46, 204, 113, 0.3), 0 0 0 3px rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .difficulty-btn.active::after {
+            content: '✓';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            background: rgba(46, 204, 113, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 棋盤 */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 20px auto;
+        }
+
+        .cell {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .cell:hover:not(.filled) {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.05);
+        }
+
+        .cell.filled {
+            cursor: not-allowed;
+        }
+
+        .cell.x {
+            color: #3498db;
+        }
+
+        .cell.o {
+            color: #e74c3c;
+        }
+
+        .cell.winner {
+            background: rgba(46, 204, 113, 0.3);
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* 按鈕 */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px 24px;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* 遊戲結束畫面 */
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            max-width: 90vw;
+        }
+
+        .game-over h2 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .game-over .result-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        /* 導航按鈕 */
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .back-button:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-button::before {
+            content: '←';
+            margin-right: 6px;
+        }
+
+        .claude-logo {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .claude-logo:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .claude-logo::before {
+            content: '🤖';
+            margin-right: 6px;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .game-board {
+                grid-template-columns: repeat(3, 80px);
+                grid-template-rows: repeat(3, 80px);
+                gap: 8px;
+            }
+
+            .cell {
+                font-size: 2.5em;
+            }
+
+            .mode-button {
+                padding: 20px;
+                font-size: 1.2em;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 模式選擇畫面 -->
+    <div class="container" id="modeSelection">
+        <h1>🎯 井字遊戲</h1>
+        <div class="mode-selection">
+            <div class="mode-button" onclick="selectMode('ai')">
+                <div class="icon">🤖</div>
+                <div>vs AI</div>
+                <div class="subtitle">與電腦對戰</div>
+            </div>
+            <div class="mode-button" onclick="selectMode('2player')">
+                <div class="icon">👥</div>
+                <div>雙人模式</div>
+                <div class="subtitle">本地雙人對戰</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 遊戲畫面 -->
+    <div class="container game-screen" id="gameScreen">
+        <h1>🎯 井字遊戲</h1>
+        <div class="game-info">
+            <div class="difficulty-selector" id="difficultySelector">
+                <button class="difficulty-btn active" onclick="setDifficulty('easy')">簡單</button>
+                <button class="difficulty-btn" onclick="setDifficulty('medium')">中等</button>
+                <button class="difficulty-btn" onclick="setDifficulty('hard')">困難</button>
+            </div>
+            <div class="turn-indicator" id="turnIndicator"></div>
+        </div>
+        <div class="game-board" id="gameBoard">
+            <div class="cell" data-index="0" onclick="handleCellClick(0)"></div>
+            <div class="cell" data-index="1" onclick="handleCellClick(1)"></div>
+            <div class="cell" data-index="2" onclick="handleCellClick(2)"></div>
+            <div class="cell" data-index="3" onclick="handleCellClick(3)"></div>
+            <div class="cell" data-index="4" onclick="handleCellClick(4)"></div>
+            <div class="cell" data-index="5" onclick="handleCellClick(5)"></div>
+            <div class="cell" data-index="6" onclick="handleCellClick(6)"></div>
+            <div class="cell" data-index="7" onclick="handleCellClick(7)"></div>
+            <div class="cell" data-index="8" onclick="handleCellClick(8)"></div>
+        </div>
+    </div>
+
+    <!-- 遊戲結束畫面 -->
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <div class="result-icon" id="resultIcon"></div>
+            <h2 id="gameOverTitle"></h2>
+            <div class="button-group">
+                <button class="btn" onclick="resetGame()">再玩一次</button>
+                <button class="btn" onclick="backToModeSelection()">返回選擇模式</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 導航按鈕 -->
+    <a href="../" class="back-button">回到首頁</a>
+    <a href="https://claude.ai/" class="claude-logo" target="_blank">Enhanced by Claude</a>
+
+    <script>
+        // 遊戲狀態
+        let gameMode = null; // 'ai' or '2player'
+        let aiDifficulty = 'easy'; // 'easy', 'medium', 'hard'
+        let board = [null, null, null, null, null, null, null, null, null];
+        let currentPlayer = 'X'; // X 先手
+        let gameActive = true;
+
+        // 勝利模式
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // 橫向
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // 縱向
+            [0, 4, 8], [2, 4, 6]              // 對角線
+        ];
+
+        // 選擇遊戲模式
+        function selectMode(mode) {
+            gameMode = mode;
+            document.getElementById('modeSelection').classList.add('hidden');
+            const gameScreen = document.getElementById('gameScreen');
+            gameScreen.classList.remove('hidden');
+            gameScreen.classList.add('show');
+
+            const difficultySelector = document.getElementById('difficultySelector');
+            if (mode === 'ai') {
+                difficultySelector.classList.add('show');
+            } else {
+                difficultySelector.classList.remove('show');
+            }
+
+            resetGame();
+        }
+
+        // 設定難度
+        function setDifficulty(difficulty) {
+            aiDifficulty = difficulty;
+
+            // 更新按鈕樣式
+            const buttons = document.querySelectorAll('.difficulty-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // 如果正在遊戲中，重新開始
+            if (gameActive || board.some(cell => cell !== null)) {
+                resetGame();
+            }
+        }
+
+        // 返回模式選擇
+        function backToModeSelection() {
+            const gameScreen = document.getElementById('gameScreen');
+            gameScreen.classList.add('hidden');
+            gameScreen.classList.remove('show');
+            document.getElementById('modeSelection').classList.remove('hidden');
+            document.getElementById('gameOver').style.display = 'none';
+            gameMode = null;
+            resetGame();
+        }
+
+        // 更新回合指示器
+        function updateTurnIndicator() {
+            const indicator = document.getElementById('turnIndicator');
+            if (gameMode === '2player') {
+                if (currentPlayer === 'X') {
+                    indicator.textContent = '玩家 1 的回合 (X)';
+                } else {
+                    indicator.textContent = '玩家 2 的回合 (O)';
+                }
+            } else {
+                if (currentPlayer === 'X') {
+                    indicator.textContent = '你的回合 (X)';
+                } else {
+                    indicator.textContent = '電腦思考中...';
+                }
+            }
+        }
+
+        // 處理格子點擊
+        function handleCellClick(index) {
+            if (!gameActive || board[index] !== null) {
+                return;
+            }
+
+            // 放置符號
+            board[index] = currentPlayer;
+            renderBoard();
+
+            // 檢查遊戲結果
+            if (checkWinner()) {
+                endGame('win');
+                return;
+            }
+
+            if (checkDraw()) {
+                endGame('draw');
+                return;
+            }
+
+            // 切換玩家
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            updateTurnIndicator();
+
+            // AI 模式下，觸發 AI 移動
+            if (gameMode === 'ai' && currentPlayer === 'O') {
+                setTimeout(makeAIMove, 500);
+            }
+        }
+
+        // AI 移動
+        function makeAIMove() {
+            if (!gameActive) return;
+
+            let moveIndex;
+
+            switch (aiDifficulty) {
+                case 'easy':
+                    moveIndex = getEasyMove();
+                    break;
+                case 'medium':
+                    moveIndex = getMediumMove();
+                    break;
+                case 'hard':
+                    moveIndex = getHardMove();
+                    break;
+                default:
+                    moveIndex = getEasyMove();
+            }
+
+            if (moveIndex === null || moveIndex === undefined) return;
+
+            // 放置 AI 的符號
+            board[moveIndex] = 'O';
+            renderBoard();
+
+            // 檢查遊戲結果
+            if (checkWinner()) {
+                endGame('win');
+                return;
+            }
+
+            if (checkDraw()) {
+                endGame('draw');
+                return;
+            }
+
+            // 切換回玩家
+            currentPlayer = 'X';
+            updateTurnIndicator();
+        }
+
+        // 渲染棋盤
+        function renderBoard() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                cell.textContent = board[index] || '';
+                cell.className = 'cell';
+                if (board[index]) {
+                    cell.classList.add('filled');
+                    cell.classList.add(board[index].toLowerCase());
+                }
+            });
+        }
+
+        // 檢查獲勝
+        function checkWinner() {
+            for (let pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    // 高亮獲勝格子
+                    const cells = document.querySelectorAll('.cell');
+                    cells[a].classList.add('winner');
+                    cells[b].classList.add('winner');
+                    cells[c].classList.add('winner');
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 檢查平手
+        function checkDraw() {
+            return board.every(cell => cell !== null);
+        }
+
+        // 結束遊戲
+        function endGame(result) {
+            gameActive = false;
+            const gameOver = document.getElementById('gameOver');
+            const title = document.getElementById('gameOverTitle');
+            const icon = document.getElementById('resultIcon');
+
+            if (result === 'win') {
+                if (gameMode === '2player') {
+                    const winner = currentPlayer === 'X' ? '玩家 1' : '玩家 2';
+                    title.textContent = `${winner} 獲勝！`;
+                    icon.textContent = '🎉';
+                } else {
+                    if (currentPlayer === 'X') {
+                        title.textContent = '你贏了！';
+                        icon.textContent = '🎉';
+                    } else {
+                        title.textContent = '電腦獲勝！';
+                        icon.textContent = '🤖';
+                    }
+                }
+            } else {
+                title.textContent = '平手！';
+                icon.textContent = '🤝';
+            }
+
+            setTimeout(() => {
+                gameOver.style.display = 'flex';
+            }, 500);
+        }
+
+        // 重新開始遊戲
+        function resetGame() {
+            board = [null, null, null, null, null, null, null, null, null];
+            currentPlayer = 'X';
+            gameActive = true;
+            document.getElementById('gameOver').style.display = 'none';
+            renderBoard();
+            updateTurnIndicator();
+        }
+
+        // ========== AI 策略函數 ==========
+
+        // 簡單模式：隨機移動
+        function getEasyMove() {
+            const emptyCells = board.map((cell, index) => cell === null ? index : null)
+                                    .filter(index => index !== null);
+            if (emptyCells.length === 0) return null;
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        }
+
+        // 中等模式：阻擋 + 基本策略
+        function getMediumMove() {
+            // 1. 檢查 AI 是否能獲勝
+            const winMove = findWinningMove('O');
+            if (winMove !== null) return winMove;
+
+            // 2. 阻擋玩家獲勝
+            const blockMove = findWinningMove('X');
+            if (blockMove !== null) return blockMove;
+
+            // 3. 優先選擇中心
+            if (board[4] === null) return 4;
+
+            // 4. 選擇角落
+            const corners = [0, 2, 6, 8];
+            const availableCorners = corners.filter(i => board[i] === null);
+            if (availableCorners.length > 0) {
+                return availableCorners[Math.floor(Math.random() * availableCorners.length)];
+            }
+
+            // 5. 隨機選擇剩餘位置
+            return getEasyMove();
+        }
+
+        // 困難模式：Minimax 演算法
+        function getHardMove() {
+            let bestScore = -Infinity;
+            let bestMove = null;
+
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === null) {
+                    board[i] = 'O';
+                    const score = minimax(board, 0, false);
+                    board[i] = null;
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = i;
+                    }
+                }
+            }
+
+            return bestMove;
+        }
+
+        // Minimax 演算法
+        function minimax(board, depth, isMaximizing) {
+            // 檢查終止狀態
+            const winner = getWinnerForMinimax();
+            if (winner === 'O') return 10 - depth;
+            if (winner === 'X') return depth - 10;
+            if (board.every(cell => cell !== null)) return 0;
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        board[i] = 'O';
+                        const score = minimax(board, depth + 1, false);
+                        board[i] = null;
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        board[i] = 'X';
+                        const score = minimax(board, depth + 1, true);
+                        board[i] = null;
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        // 尋找獲勝移動
+        function findWinningMove(player) {
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === null) {
+                    board[i] = player;
+                    const isWin = checkWinnerForPlayer(player);
+                    board[i] = null;
+                    if (isWin) return i;
+                }
+            }
+            return null;
+        }
+
+        // 檢查特定玩家是否獲勝
+        function checkWinnerForPlayer(player) {
+            for (let pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] === player && board[b] === player && board[c] === player) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 取得獲勝者（用於 Minimax）
+        function getWinnerForMinimax() {
+            for (let pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
+                }
+            }
+            return null;
+        }
+
+        // 初始化
+        updateTurnIndicator();
+    </script>
+</body>
+</html>
