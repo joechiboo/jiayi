@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Flappy 火龍</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #1b2a38; height: 100%; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, sans-serif; }
+  canvas { width: 100%; max-width: 640px; display: block; border-radius: 12px; cursor: pointer; touch-action: manipulation; }
+  .bar { width: 100%; max-width: 640px; display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; color: #9fb3c8; padding: 0 4px; box-sizing: border-box; }
+</style>
+</head>
+<body>
+<canvas id="game" width="640" height="420"></canvas>
+<div class="bar">
+  <span>點擊 / 空白鍵飛行</span>
+  <span id="best">最佳：0</span>
+</div>
+<script>
+(() => {
+const cv = document.getElementById('game');
+const cx = cv.getContext('2d');
+const W = 640, H = 420, GROUND = 380, TAU = Math.PI * 2;
+let state = 'ready';
+let dragon, pipes, score, frame, breath;
+let best = Number(localStorage.getItem('flappyDragonBest') || 0);
+document.getElementById('best').textContent = '最佳：' + best;
+
+function reset() {
+  dragon = { x: 150, y: 190, vy: 0, r: 17, rot: 0 };
+  pipes = []; score = 0; frame = 0; breath = 0;
+}
+reset();
+
+const GRAV = 0.45, FLAP = -7.6, GAP = 155, PIPE_W = 70, SPEED = 2.6;
+
+function flap() {
+  if (state === 'ready') state = 'play';
+  if (state === 'play') { dragon.vy = FLAP; breath = 14; }
+  else if (state === 'over') { reset(); state = 'ready'; }
+}
+cv.addEventListener('pointerdown', e => { e.preventDefault(); flap(); });
+window.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); flap(); } });
+
+function spawnPipe() {
+  const topH = 50 + Math.random() * (GROUND - GAP - 120);
+  pipes.push({ x: W + 20, top: topH, passed: false });
+}
+
+function update() {
+  frame++;
+  if (breath > 0) breath--;
+  if (state === 'play') {
+    dragon.vy += GRAV; dragon.y += dragon.vy;
+    dragon.rot = Math.max(-0.3, Math.min(0.7, dragon.vy * 0.06));
+    if (frame % 95 === 0) spawnPipe();
+    const sp = SPEED + Math.min(1.4, score * 0.05);
+    for (const p of pipes) {
+      p.x -= sp;
+      if (!p.passed && p.x + PIPE_W < dragon.x - dragon.r) { p.passed = true; score++; }
+      const inX = dragon.x + dragon.r > p.x && dragon.x - dragon.r < p.x + PIPE_W;
+      if (inX && (dragon.y - dragon.r < p.top || dragon.y + dragon.r > p.top + GAP)) die();
+    }
+    pipes = pipes.filter(p => p.x > -PIPE_W - 10);
+    if (dragon.y + dragon.r > GROUND || dragon.y - dragon.r < 0) die();
+  } else if (state === 'ready') {
+    dragon.y = 190 + Math.sin(frame * 0.06) * 8;
+    dragon.rot = 0;
+    if (frame % 90 === 0) breath = 16;
+  }
+}
+
+function die() {
+  state = 'over';
+  if (score > best) {
+    best = score;
+    localStorage.setItem('flappyDragonBest', best);
+    document.getElementById('best').textContent = '最佳：' + best;
+  }
+}
+
+function drawTail() {
+  const N = 8, len = 40;
+  const pts = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const x = -10 - t * len;
+    const y = 3 + Math.sin(frame * 0.22 - t * 3) * 5 * t;
+    pts.push([x, y, 7 * (1 - t) + 1.5]);
+  }
+  cx.fillStyle = '#E85D26';
+  cx.beginPath();
+  cx.moveTo(pts[0][0], pts[0][1] - pts[0][2]);
+  for (let i = 1; i <= N; i++) cx.lineTo(pts[i][0], pts[i][1] - pts[i][2]);
+  for (let i = N; i >= 0; i--) cx.lineTo(pts[i][0], pts[i][1] + pts[i][2]);
+  cx.closePath(); cx.fill();
+  const [tx, ty] = pts[N];
+  const fl = 6 + Math.sin(frame * 0.3) * 2;
+  cx.fillStyle = '#FFB020';
+  cx.beginPath();
+  cx.moveTo(tx + 2, ty + 4);
+  cx.quadraticCurveTo(tx - fl * 1.6, ty + 2, tx - fl * 0.4, ty - fl * 1.7);
+  cx.quadraticCurveTo(tx + fl * 0.6, ty - fl * 0.4, tx + 2, ty + 4);
+  cx.fill();
+  cx.fillStyle = '#F2542D';
+  cx.beginPath(); cx.arc(tx - 1, ty - 1, fl * 0.4, 0, TAU); cx.fill();
+}
+
+function drawDragon() {
+  const d = dragon;
+  cx.save();
+  cx.translate(d.x, d.y);
+  cx.rotate(d.rot);
+
+  const flapPh = state === 'play' ? Math.min(1, Math.max(0, -d.vy / 7)) : (Math.sin(frame * 0.15) + 1) / 2;
+  const wy = -34 * flapPh + 14 * (1 - flapPh);
+  const drift = Math.sin(frame * 0.12) * 1.5;
+
+  drawTail();
+
+  cx.strokeStyle = '#D9531F'; cx.lineWidth = 5.5; cx.lineCap = 'round';
+  cx.beginPath();
+  cx.moveTo(-4, 7);
+  cx.quadraticCurveTo(-10, 12 + drift * 0.5, -19, 13 + drift);
+  cx.stroke();
+  cx.beginPath();
+  cx.moveTo(-8, 7);
+  cx.quadraticCurveTo(-14, 14 + drift * 0.5, -23, 16 + drift);
+  cx.stroke();
+  cx.fillStyle = '#D9531F';
+  cx.beginPath(); cx.ellipse(-21, 13 + drift, 4, 2.4, 0.25, 0, TAU); cx.fill();
+  cx.beginPath(); cx.ellipse(-25, 16 + drift, 4, 2.4, 0.25, 0, TAU); cx.fill();
+
+  cx.fillStyle = '#E85D26';
+  cx.beginPath();
+  cx.moveTo(-14, 0);
+  cx.quadraticCurveTo(-6, -12, 8, -12);
+  cx.quadraticCurveTo(20, -12, 24, -6);
+  cx.quadraticCurveTo(26, 4, 14, 9);
+  cx.quadraticCurveTo(0, 13, -10, 8);
+  cx.quadraticCurveTo(-16, 5, -14, 0);
+  cx.fill();
+
+  cx.fillStyle = '#FFE0B0';
+  cx.beginPath();
+  cx.moveTo(-8, 8);
+  cx.quadraticCurveTo(2, 13, 14, 9);
+  cx.quadraticCurveTo(6, 6, -4, 5);
+  cx.closePath(); cx.fill();
+
+  cx.strokeStyle = '#D9531F'; cx.lineWidth = 4; cx.lineCap = 'round';
+  cx.beginPath();
+  cx.moveTo(14, 0);
+  cx.quadraticCurveTo(16, 5, 15, 9 + drift * 0.4);
+  cx.stroke();
+  cx.fillStyle = '#D9531F';
+  cx.beginPath(); cx.ellipse(15, 10 + drift * 0.4, 2.8, 1.8, 0.2, 0, TAU); cx.fill();
+
+  cx.fillStyle = '#E85D26';
+  cx.beginPath();
+  cx.moveTo(16, -8);
+  cx.quadraticCurveTo(22, -18, 30, -20);
+  cx.quadraticCurveTo(26, -10, 22, -5);
+  cx.closePath(); cx.fill();
+
+  const open = breath > 0;
+  cx.fillStyle = '#E85D26';
+  cx.beginPath();
+  cx.moveTo(26, -18);
+  cx.quadraticCurveTo(34, -26, 44, -22);
+  cx.lineTo(48, -19);
+  cx.quadraticCurveTo(40, -17, 34, -15);
+  cx.quadraticCurveTo(29, -13, 26, -15);
+  cx.closePath(); cx.fill();
+  cx.fillStyle = '#D9531F';
+  cx.beginPath();
+  if (open) {
+    cx.moveTo(29, -14);
+    cx.lineTo(45, -12);
+    cx.lineTo(38, -7);
+    cx.quadraticCurveTo(31, -8, 29, -14);
+  } else {
+    cx.moveTo(29, -14);
+    cx.lineTo(46, -16);
+    cx.lineTo(38, -12);
+    cx.quadraticCurveTo(32, -11, 29, -14);
+  }
+  cx.closePath(); cx.fill();
+  if (open) {
+    cx.fillStyle = '#8C2B10';
+    cx.beginPath();
+    cx.moveTo(31, -15);
+    cx.lineTo(44, -14);
+    cx.lineTo(37, -10);
+    cx.closePath(); cx.fill();
+  }
+
+  if (breath > 0) {
+    const bl = (14 - breath) * 4 + 12;
+    const jit = Math.sin(frame * 0.9) * 3;
+    cx.fillStyle = 'rgba(255,176,32,0.95)';
+    cx.beginPath();
+    cx.moveTo(46, -15);
+    cx.quadraticCurveTo(46 + bl * 0.6, -18 + jit, 46 + bl, -14 + jit);
+    cx.quadraticCurveTo(46 + bl * 0.6, -8 - jit, 46, -11);
+    cx.closePath(); cx.fill();
+    cx.fillStyle = 'rgba(242,84,45,0.9)';
+    cx.beginPath();
+    cx.moveTo(46, -14);
+    cx.quadraticCurveTo(46 + bl * 0.5, -14 + jit, 46 + bl * 0.7, -13 + jit * 0.5);
+    cx.quadraticCurveTo(46 + bl * 0.4, -11, 46, -12);
+    cx.closePath(); cx.fill();
+  }
+
+  cx.fillStyle = '#C7401E';
+  cx.beginPath();
+  cx.moveTo(30, -24);
+  cx.quadraticCurveTo(22, -34, 18, -32);
+  cx.quadraticCurveTo(22, -26, 27, -21);
+  cx.closePath(); cx.fill();
+  cx.beginPath();
+  cx.moveTo(36, -23);
+  cx.quadraticCurveTo(32, -34, 27, -34);
+  cx.quadraticCurveTo(31, -27, 33, -21);
+  cx.closePath(); cx.fill();
+
+  cx.fillStyle = '#fff';
+  cx.beginPath(); cx.ellipse(34, -19.5, 3.4, 3.8, -0.15, 0, TAU); cx.fill();
+  cx.fillStyle = '#1E1B18';
+  cx.beginPath(); cx.arc(35.2, -19.2, 1.9, 0, TAU); cx.fill();
+  cx.fillStyle = '#fff';
+  cx.beginPath(); cx.arc(35.8, -20, 0.7, 0, TAU); cx.fill();
+
+  cx.fillStyle = '#C7401E';
+  for (const [sx, sy] of [[-2, -12], [-9, -8], [8, -12.5]]) {
+    cx.beginPath();
+    cx.moveTo(sx - 3, sy + 2);
+    cx.quadraticCurveTo(sx, sy - 6, sx + 4, sy + 1);
+    cx.closePath(); cx.fill();
+  }
+
+  cx.fillStyle = '#C7401E';
+  cx.beginPath();
+  cx.moveTo(2, -8);
+  cx.quadraticCurveTo(-8, wy, -20, wy - 2);
+  cx.quadraticCurveTo(-14, wy + 8, -8, wy + 10);
+  cx.quadraticCurveTo(-3, wy + 12, 4, -6);
+  cx.closePath(); cx.fill();
+  cx.fillStyle = '#2E9DB8';
+  cx.beginPath();
+  cx.moveTo(2, -7);
+  cx.quadraticCurveTo(-7, wy + 3, -18, wy);
+  cx.quadraticCurveTo(-12, wy + 9, -6, wy + 10);
+  cx.quadraticCurveTo(-2, wy + 11, 4, -6);
+  cx.closePath(); cx.fill();
+
+  cx.restore();
+}
+
+function draw() {
+  cx.fillStyle = '#8FD3EE';
+  cx.fillRect(0, 0, W, H);
+  cx.fillStyle = 'rgba(255,255,255,0.9)';
+  for (let i = 0; i < 3; i++) {
+    let x = ((i * 240 - frame * 0.4) % (W + 160));
+    if (x < -80) x += W + 160;
+    const y = 70 + i * 42;
+    cx.beginPath(); cx.arc(x, y, 22, 0, TAU); cx.arc(x + 24, y - 6, 16, 0, TAU); cx.arc(x - 22, y + 6, 14, 0, TAU); cx.fill();
+  }
+  for (const p of pipes) {
+    cx.fillStyle = '#7A8B5C';
+    cx.fillRect(p.x, 0, PIPE_W, p.top);
+    cx.fillRect(p.x, p.top + GAP, PIPE_W, GROUND - p.top - GAP);
+    cx.fillStyle = '#5E6E44';
+    cx.fillRect(p.x - 4, p.top - 16, PIPE_W + 8, 16);
+    cx.fillRect(p.x - 4, p.top + GAP, PIPE_W + 8, 16);
+  }
+  cx.fillStyle = '#D8B36E';
+  cx.fillRect(0, GROUND, W, H - GROUND);
+  cx.fillStyle = '#8FBF4D';
+  cx.fillRect(0, GROUND, W, 8);
+  drawDragon();
+  cx.fillStyle = '#fff';
+  cx.strokeStyle = 'rgba(0,0,0,0.35)';
+  cx.lineWidth = 4;
+  cx.font = '500 36px sans-serif';
+  cx.textAlign = 'center';
+  cx.strokeText(score, W / 2, 60);
+  cx.fillText(score, W / 2, 60);
+  cx.font = '500 20px sans-serif';
+  if (state === 'ready') {
+    cx.strokeText('點擊開始飛行', W / 2, 130);
+    cx.fillText('點擊開始飛行', W / 2, 130);
+  } else if (state === 'over') {
+    cx.font = '500 30px sans-serif';
+    cx.strokeText('墜機了！', W / 2, 150);
+    cx.fillText('墜機了！', W / 2, 150);
+    cx.font = '500 18px sans-serif';
+    cx.strokeText('得分 ' + score + '　點擊再來一局', W / 2, 185);
+    cx.fillText('得分 ' + score + '　點擊再來一局', W / 2, 185);
+  }
+}
+
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+loop();
+})();
+</script>
+</body>
+</html>

@@ -15,7 +15,14 @@
       "Bash(cat:*)",
       "Bash(git remote set-url:*)",
       "Bash(ssh:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "PowerShell(git stash)",
+      "PowerShell(git pull --ff-only)",
+      "PowerShell(git stash pop)",
+      "PowerShell(git add index.html .claude/settings.local.json flappy-dragon)",
+      "PowerShell(git stash drop)",
+      "PowerShell(git add .claude/settings.local.json)",
+      "PowerShell(git push)"
     ],
     "deny": []
   }
