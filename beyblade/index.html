@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>旋風對決｜雙人戰鬥陀螺</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root{
+    --bg:#0d1120; --panel:#161c30; --line:#2a3352;
+    --fire:#ff5a36; --grass:#52c46b; --water:#3aa0ff;
+    --gold:#ffc53d; --text:#eef1fa; --dim:#8b93b8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:radial-gradient(1200px 800px at 50% -10%, #1a2342 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+    touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    overflow-x:hidden;
+  }
+  .screen{display:none; min-height:100dvh; padding:20px 16px 32px; max-width:520px; margin:0 auto;
+    flex-direction:column; align-items:center;}
+  .screen.active{display:flex;}
+  .eyebrow{letter-spacing:.4em; font-size:11px; color:var(--dim); text-transform:uppercase;}
+  h1{font-size:clamp(34px,9vw,46px); font-weight:900; letter-spacing:.06em; line-height:1.15;
+    background:linear-gradient(120deg,var(--fire),var(--gold) 45%,var(--water));
+    -webkit-background-clip:text; background-clip:text; color:transparent; text-align:center; margin:8px 0 4px;}
+  h2{font-size:22px; font-weight:900; letter-spacing:.12em; margin:4px 0 2px; text-align:center;}
+  .sub{color:var(--dim); font-size:13px; text-align:center; line-height:1.7;}
+  .btn{
+    display:block; width:100%; max-width:340px; margin-top:14px;
+    padding:15px 18px; border:none; border-radius:14px;
+    font:900 17px/1 "Noto Sans TC",sans-serif; letter-spacing:.25em; text-indent:.25em;
+    color:#101426; background:linear-gradient(120deg,var(--gold),#ffde7a);
+    box-shadow:0 6px 18px rgba(255,197,61,.28); cursor:pointer;
+  }
+  .btn:active{transform:translateY(2px); box-shadow:0 3px 10px rgba(255,197,61,.2);}
+  .btn.ghost{background:transparent; color:var(--dim); border:1.5px solid var(--line); box-shadow:none;}
+  .btn:disabled{opacity:.35; pointer-events:none;}
+  .spacer{flex:1;}
+
+  /* ---- 選陀螺卡片 ---- */
+  .cards{display:flex; flex-direction:column; gap:12px; width:100%; margin-top:16px;}
+  .card{
+    display:flex; align-items:center; gap:14px; width:100%;
+    background:var(--panel); border:2px solid var(--line); border-radius:16px;
+    padding:14px 16px; cursor:pointer; transition:border-color .15s, box-shadow .15s;
+    text-align:left;
+  }
+  .card .badge{font-size:38px; line-height:1; filter:drop-shadow(0 0 10px var(--c));}
+  .card .info{flex:1;}
+  .card .nm{font-size:18px; font-weight:900; letter-spacing:.08em; color:var(--c);}
+  .card .tp{font-size:12px; color:var(--dim); margin-top:3px; line-height:1.6;}
+  .card.sel{border-color:var(--c); box-shadow:0 0 0 2px var(--c), 0 0 24px color-mix(in srgb, var(--c) 45%, transparent);}
+  .pickTimer{position:relative; flex:none; width:56px; height:56px; margin-top:14px; border-radius:50%;
+    background:conic-gradient(var(--tc,var(--gold)) calc(var(--pct,100)*1%), #1c2340 0);}
+  .pickTimer::before{content:""; position:absolute; inset:4px; border-radius:50%; background:var(--bg);}
+  .pickTimer span{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:20px; font-weight:900; color:var(--tc,var(--gold));}
+  .pickTimer.urgent{--tc:var(--fire); animation:tPulse .8s ease-in-out infinite;}
+  @keyframes tPulse{50%{transform:scale(1.1);}}
+  .dirRow{display:flex; gap:10px; width:100%; margin-top:12px;}
+  .dirBtn{flex:1; background:var(--panel); border:2px solid var(--line); border-radius:12px;
+    padding:10px 8px; color:var(--dim); font:700 14px/1.4 "Noto Sans TC",sans-serif; cursor:pointer;}
+  .dirBtn small{display:block; font-size:10px; font-weight:400; margin-top:2px; letter-spacing:.05em;}
+  .dirBtn.sel{border-color:var(--gold); color:var(--gold);}
+  .cycle{margin-top:22px; display:flex; justify-content:center;}
+  .cyOrbit{position:relative; width:130px; height:130px;}
+  .cyRing{position:absolute; inset:17px; border:1.5px dashed var(--line); border-radius:50%;
+    animation:cySpin 24s linear infinite;}
+  @keyframes cySpin{to{transform:rotate(360deg);}}
+  .cyCenter{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    font-size:11px; letter-spacing:.2em; text-indent:.2em; color:var(--dim);
+    text-align:center; line-height:1.7;}
+  .cyEl{position:absolute; transform:translate(-50%,-50%); width:34px; height:34px;
+    display:flex; align-items:center; justify-content:center; font-size:17px;
+    background:var(--panel); border:1.5px solid var(--line); border-radius:50%;}
+  .cyArw{position:absolute; transform:translate(-50%,-50%) rotate(var(--r));
+    color:var(--dim); font-size:13px; font-weight:900; line-height:1;}
+
+  /* ---- 換手遮罩 ---- */
+  .shield{font-size:78px; margin:26px 0 8px; animation:bob 1.6s ease-in-out infinite;}
+  @keyframes bob{50%{transform:translateY(-8px);}}
+
+  /* ---- 揭曉 ---- */
+  .vsRow{display:flex; align-items:center; gap:10px; width:100%; margin-top:20px;}
+  .vsCard{flex:1; background:var(--panel); border:2px solid var(--c); border-radius:16px;
+    padding:16px 8px; text-align:center; box-shadow:0 0 20px color-mix(in srgb,var(--c) 30%,transparent);}
+  .vsCard .badge{font-size:44px;}
+  .vsCard .nm{font-weight:900; color:var(--c); margin-top:6px; font-size:15px; letter-spacing:.05em;}
+  .vsCard .pl{font-size:11px; color:var(--dim); letter-spacing:.3em; margin-bottom:4px;}
+  .vsMark{font-size:26px; font-weight:900; font-style:italic; color:var(--gold);}
+  .advTxt{margin-top:14px; font-size:14px; font-weight:700; text-align:center; line-height:1.8;}
+
+  /* ---- 發射小遊戲 ---- */
+  .modeBtns{display:flex; gap:12px; width:100%; margin-top:16px;}
+  .modeBtn{flex:1; background:var(--panel); border:2px solid var(--line); border-radius:16px;
+    padding:18px 10px; text-align:center; cursor:pointer; color:var(--text);}
+  .modeBtn .ic{font-size:32px;}
+  .modeBtn .t{font-weight:900; letter-spacing:.15em; margin-top:8px; font-size:15px;}
+  .modeBtn .d{font-size:11px; color:var(--dim); margin-top:4px; line-height:1.5;}
+  .modeBtn:active{border-color:var(--gold);}
+  #timingWrap,#mashWrap{width:100%; display:none; flex-direction:column; align-items:center; margin-top:18px;}
+  .tbar{position:relative; width:100%; height:46px; border-radius:12px; overflow:hidden;
+    background:linear-gradient(90deg,#232a45 0%, #61481f 32%, #b32d18 46%, var(--fire) 49%, #b32d18 54%, #61481f 68%, #232a45 100%);
+    border:2px solid var(--line);}
+  .tneedle{position:absolute; top:-4px; bottom:-4px; width:4px; background:#fff; left:50%;
+    box-shadow:0 0 10px #fff; border-radius:2px;}
+  .bigTap{
+    width:200px; height:200px; border-radius:50%; border:none; margin-top:8px;
+    font:900 26px/1.3 "Noto Sans TC",sans-serif; letter-spacing:.2em; color:#101426;
+    background:radial-gradient(circle at 35% 30%, #ffe9a8, var(--gold) 60%, #d99a12);
+    box-shadow:0 10px 26px rgba(255,197,61,.35); cursor:pointer;
+  }
+  .bigTap:active{transform:scale(.94);}
+  .huge{font-size:44px; font-weight:900; letter-spacing:.05em; margin-top:10px;}
+  .rpmShow{color:var(--gold); text-shadow:0 0 18px rgba(255,197,61,.5);}
+
+  /* ---- 戰鬥 ---- */
+  #screen-battle{padding-top:12px;}
+  .hud{display:flex; gap:10px; width:100%;}
+  .hudBox{flex:1; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:8px 10px;}
+  .hudBox .hn{font-size:12px; font-weight:900; color:var(--c); letter-spacing:.05em; display:flex; justify-content:space-between;}
+  .hudBox .hr{font-size:11px; color:var(--dim); margin-top:2px;}
+  .bar{height:7px; border-radius:4px; background:#0a0e1c; margin-top:5px; overflow:hidden;}
+  .bar>i{display:block; height:100%; border-radius:4px; transition:width .12s linear;}
+  .bar.rpm>i{background:linear-gradient(90deg,var(--c),#fff);}
+  .bar.burst>i{background:linear-gradient(90deg,#7a2d8f,#ff3df0); width:0%;}
+  .burstLb{font-size:10px; color:var(--dim); margin-top:4px;}
+  #arenaWrap{position:relative; width:100%; margin-top:12px;}
+  #arena{width:100%; display:block; border-radius:20px;}
+  #countdown{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:96px; font-weight:900; font-style:italic; color:var(--gold);
+    text-shadow:0 0 30px rgba(255,197,61,.7); pointer-events:none;}
+  #countdown.shoot{font-size:clamp(34px,10vw,56px); letter-spacing:.04em;}
+
+  /* ---- 連線 ---- */
+  #olCode{
+    width:100%; max-width:340px; margin-top:14px; padding:14px;
+    border-radius:14px; border:2px solid var(--line); background:var(--panel);
+    color:var(--text); font:900 24px/1 "Noto Sans TC",sans-serif;
+    text-align:center; letter-spacing:.4em; text-indent:.4em; outline:none;
+  }
+  #olCode:focus{border-color:var(--gold);}
+
+  /* ---- 結果 ---- */
+  .resultBadge{font-size:86px; margin-top:26px;}
+  .winName{font-size:30px; font-weight:900; letter-spacing:.08em; margin-top:6px;}
+  .reason{margin-top:10px; font-size:15px; color:var(--dim); letter-spacing:.15em;}
+  .flash{animation:flashIn .5s ease-out;}
+  @keyframes flashIn{0%{transform:scale(1.6); opacity:0;}100%{transform:scale(1); opacity:1;}}
+</style>
+</head>
+<body>
+
+<!-- 標題 -->
+<div class="screen active" id="screen-title">
+  <div class="spacer"></div>
+  <div class="eyebrow">2P BATTLE</div>
+  <h1>旋風對決</h1>
+  <div class="sub">一支手機，兩位玩家<br>秘密選好陀螺，衝出極限轉速，撐到最後就是贏家</div>
+  <div class="cycle">
+    <div class="cyOrbit">
+      <div class="cyRing"></div>
+      <span class="cyCenter">屬性<br>相剋</span>
+      <span class="cyEl" style="left:65px; top:17px;">🔥</span>
+      <span class="cyEl" style="left:107px; top:89px;">🌿</span>
+      <span class="cyEl" style="left:23px; top:89px;">💧</span>
+      <span class="cyArw" style="left:107px; top:41px; --r:60deg;">›</span>
+      <span class="cyArw" style="left:65px; top:113px; --r:180deg;">›</span>
+      <span class="cyArw" style="left:23px; top:41px; --r:-60deg;">›</span>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" onclick="startLocal()">🤝 本機對戰</button>
+  <button class="btn ghost" onclick="showOnline()">🌐 連線對戰</button>
+  <div class="spacer"></div>
+</div>
+
+<!-- 連線設定 -->
+<div class="screen" id="screen-online">
+  <div class="spacer"></div>
+  <h2>🌐 連線對戰</h2>
+  <div class="sub">和朋友各拿一支手機遠端對決！</div>
+  <button class="btn" onclick="olCreate()">建立房間</button>
+  <div class="sub" style="margin-top:22px">— 或輸入朋友的房間代碼 —</div>
+  <input id="olCode" inputmode="numeric" maxlength="4" placeholder="····" autocomplete="off">
+  <button class="btn" onclick="olJoin()">加入房間</button>
+  <div class="sub" id="olMsg" style="color:var(--fire); margin-top:12px; min-height:20px"></div>
+  <div class="spacer"></div>
+  <button class="btn ghost" onclick="goHome()">返回</button>
+</div>
+
+<!-- 連線等待 -->
+<div class="screen" id="screen-wait">
+  <div class="spacer"></div>
+  <div class="shield" id="waitIcon">⏳</div>
+  <h2 id="waitTitle">等待中…</h2>
+  <div class="sub" id="waitSub"></div>
+  <div class="huge rpmShow" id="waitCode" style="display:none"></div>
+  <div class="spacer"></div>
+  <button class="btn ghost" onclick="goHome()">離開房間</button>
+</div>
+
+<!-- 選陀螺 -->
+<div class="screen" id="screen-pick">
+  <h2 id="pickTitle">1P 選擇陀螺</h2>
+  <div class="sub" id="pickHint">另一位玩家先把眼睛遮住！</div>
+  <div class="pickTimer" id="pickTimer"><span>30</span></div>
+  <div class="cards" id="cardList"></div>
+  <div class="dirRow">
+    <button class="dirBtn sel" id="dirR" onclick="setDir(1)">↻ 右迴旋<small>順時針・標準發射</small></button>
+    <button class="dirBtn" id="dirL" onclick="setDir(-1)">↺ 左迴旋<small>逆時針・反向發射</small></button>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" id="pickConfirm" disabled onclick="confirmPick()">確定選擇</button>
+</div>
+
+<!-- 換手 -->
+<div class="screen" id="screen-handoff">
+  <div class="spacer"></div>
+  <div class="shield">🤝</div>
+  <h2>請把手機交給 2P</h2>
+  <div class="sub">1P 已完成秘密選擇</div>
+  <div class="spacer"></div>
+  <button class="btn" onclick="beginPick(1)">我是 2P，開始選擇</button>
+  <div class="spacer"></div>
+</div>
+
+<!-- 揭曉 -->
+<div class="screen" id="screen-reveal">
+  <h2>雙方陀螺揭曉！</h2>
+  <div class="vsRow">
+    <div class="vsCard" id="rv0"></div>
+    <div class="vsMark">VS</div>
+    <div class="vsCard" id="rv1"></div>
+  </div>
+  <div class="advTxt" id="advTxt"></div>
+  <div class="spacer"></div>
+  <button class="btn" onclick="startSpinFlow()">前往發射台</button>
+</div>
+
+<!-- 發射 -->
+<div class="screen" id="screen-spinup">
+  <h2 id="spinTitle">1P 發射！</h2>
+  <div class="sub" id="spinSub">選擇你的發射方式</div>
+  <div class="modeBtns" id="modeBtns">
+    <button class="modeBtn" onclick="startTiming()">
+      <div class="ic">🎯</div><div class="t">時機挑戰</div>
+      <div class="d">指針停在紅心<br>越準轉速越高</div>
+    </button>
+    <button class="modeBtn" onclick="startMash()">
+      <div class="ic">⚡</div><div class="t">連打狂熱</div>
+      <div class="d">5 秒內狂按<br>越多下轉速越高</div>
+    </button>
+  </div>
+  <div id="timingWrap">
+    <div class="tbar"><div class="tneedle" id="needle"></div></div>
+    <button class="bigTap" id="timingBtn">停！</button>
+  </div>
+  <div id="mashWrap">
+    <div class="huge" id="mashTimer">5.0</div>
+    <button class="bigTap" id="mashBtn">狂按！<br><span id="mashCount" style="font-size:34px">0</span></button>
+  </div>
+  <div class="huge rpmShow" id="rpmResult" style="display:none"></div>
+  <div class="spacer"></div>
+  <button class="btn" id="spinNext" style="display:none" onclick="spinDone()">完成</button>
+</div>
+
+<!-- 戰鬥 -->
+<div class="screen" id="screen-battle">
+  <div class="hud">
+    <div class="hudBox" id="hud0">
+      <div class="hn"><span class="hnm"></span><span class="hrpm"></span></div>
+      <div class="bar rpm"><i></i></div>
+      <div class="burstLb">爆體槽</div>
+      <div class="bar burst"><i></i></div>
+    </div>
+    <div class="hudBox" id="hud1">
+      <div class="hn"><span class="hnm"></span><span class="hrpm"></span></div>
+      <div class="bar rpm"><i></i></div>
+      <div class="burstLb">爆體槽</div>
+      <div class="bar burst"><i></i></div>
+    </div>
+  </div>
+  <div id="arenaWrap">
+    <canvas id="arena"></canvas>
+    <div id="countdown"></div>
+  </div>
+</div>
+
+<!-- 結果 -->
+<div class="screen" id="screen-result">
+  <div class="spacer"></div>
+  <div class="resultBadge flash" id="resBadge">🏆</div>
+  <h2 class="eyebrow" id="resPl" style="letter-spacing:.4em"></h2>
+  <div class="winName" id="resName"></div>
+  <div class="reason" id="resReason"></div>
+  <div class="spacer"></div>
+  <button class="btn" onclick="rematch()">再戰一場（同陀螺）</button>
+  <button class="btn ghost" onclick="restart()">重新選陀螺</button>
+</div>
+
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+<script>
+"use strict";
+/* ================= 資料 ================= */
+const TOPS = {
+  fire:  {name:"火焰龍捲", emoji:"🔥", color:"#ff5a36", color2:"#ffb03a", type:"攻擊型",
+          desc:"移動範圍大，主動衝撞。攻擊力高、但轉速消耗快。",
+          atk:1.55, def:0.8, decay:1.0, burstRes:0.9, center:0.35, jitter:400, orbit:95, dash:true},
+  grass: {name:"森林迴旋", emoji:"🌿", color:"#52c46b", color2:"#b4e85a", type:"持久型",
+          desc:"轉速衰減最慢，靠耐力磨死對手。",
+          atk:1.0, def:1.0, decay:0.6, burstRes:1.05, center:0.7, jitter:230, orbit:75, dash:false},
+  water: {name:"水之堡壘", emoji:"💧", color:"#3aa0ff", color2:"#7fd4ff", type:"防禦型",
+          desc:"死守中央原地打轉。防禦與抗爆體最強、攻擊最弱。",
+          atk:0.72, def:1.6, decay:0.85, burstRes:1.45, center:2.2, jitter:90, orbit:30, dash:false},
+};
+const ORDER = ["fire","grass","water"];
+const BEATS = {fire:"grass", grass:"water", water:"fire"};
+function elemMul(a,b){ if(BEATS[a]===b) return 1.45; if(BEATS[b]===a) return 0.7; return 1; }
+
+let picks=[null,null], powers=[0,0], dirs=[1,1], currentPicker=0, tempSel=null, tempDir=1, currentSpinner=0;
+
+/* ================= 連線對戰 ================= */
+// 連線戰鬥不傳位置，只同步「選擇+轉速+亂數種子」，兩邊跑同一套確定性模擬
+const SERVER_URL = (location.hostname==="localhost"||location.hostname==="127.0.0.1")
+  ? "http://localhost:3000"
+  : "https://jiayi-beyblade.onrender.com";
+let online=false, myIdx=0, socket=null;
+
+// 玩家標籤：本機=1P/2P，連線=你/對手
+function plName(i){ return online ? (i===myIdx?"你":"對手") : (i+1)+"P"; }
+
+// 種子亂數（mulberry32）：連線時雙方用同一種子，戰鬥演出完全一致
+function mulberry32(a){
+  return function(){
+    a|=0; a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+let rng=Math.random;
+
+function startLocal(){ online=false; beginPick(0); }
+function showOnline(){ $("olMsg").textContent=""; show("screen-online"); }
+function goHome(){
+  if(socket){ socket.disconnect(); socket=null; }
+  online=false; picks=[null,null]; powers=[0,0];
+  show("screen-title");
+}
+function showWait(icon,title,sub,code){
+  $("waitIcon").textContent=icon;
+  $("waitTitle").textContent=title;
+  $("waitSub").textContent=sub||"";
+  const c=$("waitCode");
+  if(code){ c.style.display="block"; c.textContent=code; }
+  else c.style.display="none";
+  show("screen-wait");
+}
+function olConnect(){
+  if(socket) return socket;
+  if(typeof io==="undefined"){ $("olMsg").textContent="連線元件載入失敗，請檢查網路後重新整理"; return null; }
+  socket=io(SERVER_URL);
+  socket.on("connect_error",()=>{
+    if($("screen-online").classList.contains("active")||$("screen-wait").classList.contains("active"))
+      $("olMsg").textContent="連線伺服器喚醒中（免費主機約需 1 分鐘），請稍候…";
+  });
+  socket.on("room_created",d=>{
+    myIdx=0;
+    showWait("📣","邀請朋友加入！","把下面的房間代碼告訴對手",d.roomId);
+  });
+  socket.on("room_ready",()=>{ sLaunch(); beginPick(myIdx); });
+  socket.on("opponent_picked",()=>{
+    if($("screen-pick").classList.contains("active")) $("pickHint").textContent="對手已選好，等你囉！";
+  });
+  socket.on("reveal",d=>{ picks=d.picks.slice(); if(d.dirs) dirs=d.dirs.slice(); revealScreen(); });
+  socket.on("opponent_launched",()=>{
+    if($("screen-spinup").classList.contains("active")) $("spinSub").textContent="對手已發射，等你囉！";
+  });
+  socket.on("battle_start",d=>{
+    picks=d.picks.slice(); powers=d.powers.slice();
+    if(d.dirs) dirs=d.dirs.slice();
+    startBattle(d.seed);
+  });
+  socket.on("again",d=>{
+    powers=[0,0];
+    if(d.repick){ picks=[null,null]; beginPick(myIdx); }
+    else spinPhase(myIdx);
+  });
+  socket.on("opponent_left",()=>{
+    if(battleRAF) cancelAnimationFrame(battleRAF);
+    battleOver=true;
+    showWait("😢","對手離開了房間","按下方按鈕回到首頁");
+  });
+  socket.on("err_msg",d=>{ show("screen-online"); $("olMsg").textContent=d.message; });
+  return socket;
+}
+function olCreate(){
+  online=true;
+  const s=olConnect(); if(!s) return;
+  $("olMsg").textContent="";
+  showWait("⏳","建立房間中…","第一次連線需喚醒伺服器，最多等 1 分鐘");
+  s.emit("create_room");
+}
+function olJoin(){
+  const code=$("olCode").value.trim();
+  if(code.length!==4){ $("olMsg").textContent="請輸入 4 位數房間代碼"; return; }
+  online=true; myIdx=1;
+  const s=olConnect(); if(!s) return;
+  $("olMsg").textContent="";
+  showWait("⏳","加入房間中…","第一次連線需喚醒伺服器，最多等 1 分鐘");
+  s.emit("join_room",{roomId:code});
+}
+
+/* ================= 畫面切換 ================= */
+const $=id=>document.getElementById(id);
+function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); $(id).classList.add("active"); window.scrollTo(0,0); }
+
+/* ================= 音效（Web Audio 極簡版） ================= */
+let AC=null;
+function ac(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); return AC; }
+function tone(freq,dur,type,vol){
+  try{
+    const a=ac(), o=a.createOscillator(), g=a.createGain();
+    o.type=type||"square"; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol||0.12, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime+dur);
+    o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+dur);
+  }catch(e){}
+}
+const sHit=()=>{tone(160,0.08,"square",0.15); tone(90,0.12,"sawtooth",0.1);};
+const sTick=()=>tone(880,0.04,"square",0.06);
+const sLaunch=()=>{tone(220,0.25,"sawtooth",0.12); setTimeout(()=>tone(440,0.2,"sawtooth",0.1),80);};
+const sBoom=()=>{tone(60,0.5,"sawtooth",0.25); tone(120,0.35,"square",0.18);};
+const sWin=()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.18,"square",0.12),i*110));};
+
+/* ================= 選陀螺 ================= */
+function beginPick(p){
+  currentPicker=p; tempSel=null;
+  if(online){
+    $("pickTitle").textContent="選擇你的陀螺";
+    $("pickHint").textContent="放心選，對手看不到你的選擇！";
+  }else{
+    $("pickTitle").textContent=(p+1)+"P 選擇陀螺";
+    $("pickHint").textContent = p===0 ? "2P 先把眼睛遮住，不要偷看！" : "1P 不要偷看喔！";
+  }
+  $("pickConfirm").disabled=true;
+  const list=$("cardList"); list.innerHTML="";
+  ORDER.forEach(k=>{
+    const c=TOPS[k];
+    const el=document.createElement("button");
+    el.className="card"; el.style.setProperty("--c",c.color);
+    el.innerHTML='<div class="badge">'+c.emoji+'</div><div class="info"><div class="nm">'+c.name+'・'+c.type+'</div><div class="tp">'+c.desc+'</div></div>';
+    el.onclick=()=>{ tempSel=k; sTick();
+      list.querySelectorAll(".card").forEach(x=>x.classList.remove("sel"));
+      el.classList.add("sel"); $("pickConfirm").disabled=false; };
+    list.appendChild(el);
+  });
+  setDir(1);
+  show("screen-pick");
+  startPickTimer();
+}
+function setDir(d){
+  tempDir=d;
+  $("dirR").classList.toggle("sel",d===1);
+  $("dirL").classList.toggle("sel",d===-1);
+}
+/* 選陀螺限時 30 秒，超時自動（隨機）出戰 */
+const PICK_SECS=30;
+let pickTimerId=null, pickDeadline=0, pickLastSec=-1;
+function startPickTimer(){
+  stopPickTimer();
+  pickDeadline=Date.now()+PICK_SECS*1000; pickLastSec=-1;
+  updatePickTimer();
+  pickTimerId=setInterval(updatePickTimer,200);
+}
+function stopPickTimer(){ if(pickTimerId){ clearInterval(pickTimerId); pickTimerId=null; } }
+function updatePickTimer(){
+  if(!$("screen-pick").classList.contains("active")){ stopPickTimer(); return; }
+  const left=Math.max(0,pickDeadline-Date.now());
+  const sec=Math.ceil(left/1000);
+  const el=$("pickTimer");
+  el.style.setProperty("--pct",left/(PICK_SECS*1000)*100);
+  el.querySelector("span").textContent=sec;
+  el.classList.toggle("urgent",sec<=10);
+  if(sec!==pickLastSec){ if(sec<=5&&sec>0) sTick(); pickLastSec=sec; }
+  if(left<=0){ stopPickTimer(); pickTimeUp(); }
+}
+function pickTimeUp(){
+  if(!tempSel){
+    tempSel=ORDER[Math.floor(Math.random()*ORDER.length)];
+    const list=$("cardList");
+    [...list.children].forEach((el,i)=>el.classList.toggle("sel",ORDER[i]===tempSel));
+  }
+  $("pickConfirm").disabled=true;
+  $("pickHint").textContent="時間到！自動出戰 "+TOPS[tempSel].emoji+" "+TOPS[tempSel].name;
+  tone(300,0.35,"sawtooth",0.15);
+  setTimeout(()=>{ if($("screen-pick").classList.contains("active")) confirmPick(); },900);
+}
+function confirmPick(){
+  stopPickTimer();
+  picks[currentPicker]=tempSel;
+  dirs[currentPicker]=tempDir;
+  if(online){
+    socket.emit("pick",{top:tempSel,dir:tempDir});
+    showWait("🙈","等待對手選擇…","雙方都選好才會揭曉");
+  }
+  else if(currentPicker===0) show("screen-handoff");
+  else revealScreen();
+}
+
+/* ================= 揭曉 ================= */
+function revealScreen(){
+  [0,1].forEach(i=>{
+    const c=TOPS[picks[i]], el=$("rv"+i);
+    el.style.setProperty("--c",c.color);
+    el.innerHTML='<div class="pl">'+plName(i)+'</div><div class="badge">'+c.emoji+'</div><div class="nm">'+c.name+'<br><span style="font-size:12px;color:var(--dim)">'+c.type+'・'+(dirs[i]===1?"↻ 右迴旋":"↺ 左迴旋")+'</span></div>';
+  });
+  const a=picks[0], b=picks[1], A=TOPS[a], B=TOPS[b];
+  let txt;
+  if(a===b) txt="鏡像對決！"+A.emoji+" 同型互撞，全看轉速與運氣！";
+  else if(BEATS[a]===b) txt=A.emoji+" 屬性克制 "+B.emoji+"！<br>"+plName(0)+" 攻擊加成、"+plName(1)+" 更容易被打爆！";
+  else txt=B.emoji+" 屬性克制 "+A.emoji+"！<br>"+plName(1)+" 攻擊加成、"+plName(0)+" 更容易被打爆！";
+  txt+='<br><span style="font-size:12px;color:var(--dim)">'+(dirs[0]!==dirs[1]
+    ? "⚡ 反向迴旋對決：每次碰撞會互相吸收對方流失的轉速！"
+    : "同向迴旋：硬碰硬的正面對決！")+'</span>';
+  $("advTxt").innerHTML=txt;
+  show("screen-reveal");
+}
+function startSpinFlow(){ spinPhase(online?myIdx:0); }
+
+/* ================= 發射小遊戲 ================= */
+let timingRAF=null, mashTimerId=null;
+function spinPhase(p){
+  currentSpinner=p;
+  $("spinTitle").textContent=(online?"你來發射！":(p+1)+"P 發射！")+" "+TOPS[picks[p]].emoji;
+  $("spinSub").textContent="大聲喊出「3, 2, 1, GO SHOOT！」選擇發射方式";
+  $("modeBtns").style.display="flex";
+  $("timingWrap").style.display="none";
+  $("mashWrap").style.display="none";
+  $("rpmResult").style.display="none";
+  $("spinNext").style.display="none";
+  show("screen-spinup");
+}
+function finishSpin(power){
+  powers[currentSpinner]=power;
+  const rpm=Math.round(4000+4200*power);
+  $("timingWrap").style.display="none";
+  $("mashWrap").style.display="none";
+  const r=$("rpmResult");
+  r.style.display="block";
+  r.textContent=rpm+" RPM";
+  r.classList.remove("flash"); void r.offsetWidth; r.classList.add("flash");
+  $("spinSub").textContent = power>0.92?"神級發射！！":(power>0.75?"漂亮！":"還行，上場拚拚看！");
+  $("spinNext").style.display="block";
+  sLaunch();
+}
+function spinDone(){
+  if(online){
+    socket.emit("launch",{power:powers[currentSpinner]});
+    showWait("🚀","等待對手發射…","雙方都發射後立刻開戰！");
+  }
+  else if(currentSpinner===0) spinPhase(1);
+  else startBattle(Math.floor(Math.random()*0x7fffffff));
+}
+/* --- 時機挑戰 --- */
+function startTiming(){
+  $("modeBtns").style.display="none";
+  $("timingWrap").style.display="flex";
+  $("spinSub").textContent="指針停在正中央紅心＝最高轉速！";
+  const needle=$("needle");
+  let t=Math.random()*6.28, stopped=false;
+  const start=performance.now();
+  function loop(now){
+    if(stopped) return;
+    const x=Math.sin(t+(now-start)/1000*3.4); // -1~1
+    needle.style.left=(50+x*47)+"%";
+    timingRAF=requestAnimationFrame(loop);
+  }
+  timingRAF=requestAnimationFrame(loop);
+  $("timingBtn").onclick=()=>{
+    if(stopped) return;
+    stopped=true; cancelAnimationFrame(timingRAF);
+    const left=parseFloat(needle.style.left)||50;
+    const off=Math.min(1,Math.abs(left-50)/47);
+    const power=0.55+0.45*Math.pow(1-off,1.7);
+    finishSpin(power);
+  };
+}
+/* --- 連打狂熱 --- */
+function startMash(){
+  $("modeBtns").style.display="none";
+  $("mashWrap").style.display="flex";
+  $("spinSub").textContent="5 秒內拚命按！";
+  let count=0, left=5.0, done=false;
+  $("mashCount").textContent="0";
+  $("mashTimer").textContent="5.0";
+  const btn=$("mashBtn");
+  const onTap=(e)=>{ if(done) return; e.preventDefault(); count++; $("mashCount").textContent=count; sTick(); };
+  btn.onpointerdown=onTap;
+  mashTimerId=setInterval(()=>{
+    left-=0.1;
+    if(left<=0){
+      done=true; clearInterval(mashTimerId); btn.onpointerdown=null;
+      const power=0.55+0.45*Math.min(1,count/42);
+      finishSpin(power);
+    } else $("mashTimer").textContent=left.toFixed(1);
+  },100);
+}
+
+/* ================= 戰鬥模擬 ================= */
+const R=170, TOP_R=24;           // 邏輯座標：場地半徑 / 陀螺半徑
+let tops=[], sparks=[], battleRAF=null, lastT=0, shake=0, battleOver=false, slowmo=0;
+let floatTexts=[], flashT=0, flashX=0, flashY=0, hitstop=0, battleTime=0, suddenShown=false;
+function addText(x,y,text,color,size){ floatTexts.push({x,y,text,color,size,life:0.8}); }
+
+function makeTop(i){
+  const cfg=TOPS[picks[i]];
+  return {
+    i, key:picks[i], cfg,
+    x:(i===0?-1:1)*95, y:(i===0?-1:1)*20,
+    vx:0, vy:0,
+    rpm:4000+4200*powers[i],
+    maxRpm:4000+4200*powers[i],
+    burst:0, angle:rng()*6.28, dir:dirs[i]===-1?-1:1,
+    alive:true, reason:"", dashT:1.2+rng(),
+    hitCd:0, outRadius:0, trail:[]
+  };
+}
+function startBattle(seed){
+  rng=mulberry32((seed||1)>>>0); acc=0;
+  tops=[makeTop(0),makeTop(1)];
+  sparks=[]; battleOver=false; shake=0; slowmo=0;
+  floatTexts=[]; flashT=0; hitstop=0; battleTime=0; suddenShown=false;
+  [0,1].forEach(i=>{
+    const h=$("hud"+i), c=tops[i].cfg;
+    h.style.setProperty("--c",c.color);
+    h.querySelector(".hnm").textContent=plName(i)+" "+c.emoji+" "+c.name;
+  });
+  const cv=$("arena");
+  const size=Math.min(480, cv.parentElement.clientWidth||360);
+  cv.width=size*2; cv.height=size*2;
+  cv.style.height=cv.style.width="100%";
+  show("screen-battle");
+  // 倒數
+  const cd=$("countdown");
+  cd.classList.remove("shoot");
+  let n=3;
+  cd.textContent="3"; sTick();
+  const t=setInterval(()=>{
+    n--;
+    if(n>0){ cd.textContent=n; sTick(); }
+    else{
+      clearInterval(t);
+      cd.classList.add("shoot");
+      cd.textContent="GO SHOOT!!"; sLaunch();
+      setTimeout(()=>{ cd.textContent=""; cd.classList.remove("shoot"); },700);
+      lastT=performance.now();
+      battleRAF=requestAnimationFrame(tick);
+    }
+  },700);
+  drawArena(); // 先畫靜態一幀
+}
+const STEP=1/120; let acc=0;
+function tick(now){
+  let frameDt=Math.min(0.1,(now-lastT)/1000); lastT=now;
+  if(hitstop>0){ hitstop-=frameDt; frameDt=0; }          // 漫畫式撞擊定格
+  else if(slowmo>0){ slowmo-=frameDt; frameDt*=0.25; }
+  acc+=frameDt;
+  // 固定步長模擬：連線時兩邊步數與亂數序列完全一致，演出才會同步
+  while(acc>=STEP && !battleOver){ battleTime+=STEP; update(STEP); acc-=STEP; }
+  drawArena();
+  updateHud();
+  if(!battleOver) battleRAF=requestAnimationFrame(tick);
+}
+function update(dt){
+  const alive=tops.filter(t=>t.alive);
+  for(const t of tops){
+    if(!t.alive) continue;
+    const c=t.cfg;
+    // 轉速衰減（22秒後進入決勝時刻，加速衰減強制分勝負）
+    const sudden = battleTime>22 ? 1+(battleTime-22)*0.65 : 1;
+    t.rpm-=(140+t.rpm*0.02)*c.decay*sudden*dt;
+    // 碗型場地：往中心的力
+    const k=1.6*c.center;
+    t.vx+=-t.x*k*dt; t.vy+=-t.y*k*dt;
+    // 繞場軌道運動（轉速越高繞越快，移動範圍大）
+    const d0=Math.hypot(t.x,t.y)||1;
+    const orb=c.orbit*(t.rpm/8200);
+    t.vx+=(-t.y/d0)*orb*t.dir*dt; t.vy+=(t.x/d0)*orb*t.dir*dt;
+    // 高轉速 → 亂竄（離心亂流）
+    const wild=Math.pow(t.rpm/8200,2)*c.jitter;
+    const ang=rng()*6.283;
+    t.vx+=Math.cos(ang)*wild*dt; t.vy+=Math.sin(ang)*wild*dt;
+    // 攻擊型：定時衝刺撲向對手
+    if(c.dash){
+      t.dashT-=dt;
+      const foe=tops[1-t.i];
+      if(t.dashT<=0 && foe.alive){
+        const dx=foe.x-t.x, dy=foe.y-t.y, d=Math.hypot(dx,dy)||1;
+        const pow=110*(0.6+t.rpm/8200);
+        t.vx+=dx/d*pow; t.vy+=dy/d*pow;
+        t.dashT=0.9+rng()*1.1;
+        addText(t.x,t.y-30,"咻—","#fff",14);
+      }
+    }
+    // 阻尼
+    const damp=Math.exp(-1.15*dt);
+    t.vx*=damp; t.vy*=damp;
+    t.x+=t.vx*dt; t.y+=t.vy*dt;
+    t.trail.push({x:t.x,y:t.y}); if(t.trail.length>9) t.trail.shift();
+    t.angle+=t.rpm*0.004*dt*6.283*t.dir;
+    t.hitCd=Math.max(0,t.hitCd-dt);
+    // 邊界：噴出 or 反彈
+    const d=Math.hypot(t.x,t.y);
+    if(d>R-TOP_R){
+      const nx=t.x/d, ny=t.y/d;
+      const vr=t.vx*nx+t.vy*ny; // 向外速度
+      const escape=95-45*(t.rpm/8200); // 轉速越高越容易噴出
+      if(vr>escape){
+        t.alive=false; t.reason="out";
+        t.outRadius=d;
+        burstFx(t.x,t.y,t.cfg.color,14);
+        addText(t.x*0.8,t.y*0.8,"飛出去啦!!",t.cfg.color,24);
+        sHit();
+      }else{
+        t.x=nx*(R-TOP_R); t.y=ny*(R-TOP_R);
+        t.vx-=1.6*vr*nx; t.vy-=1.6*vr*ny;
+        t.vx*=0.7; t.vy*=0.7;
+        if(vr>25) sparkFx(t.x,t.y,"#ffffff",4);
+      }
+    }
+    // 停轉
+    if(t.rpm<=280){ t.rpm=0; t.alive=false; t.reason="stop"; }
+  }
+  // 陀螺互撞
+  const [a,b]=tops;
+  if(a.alive&&b.alive){
+    const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy);
+    if(d<TOP_R*2 && a.hitCd<=0){
+      a.hitCd=b.hitCd=0.16;
+      const nx=dx/(d||1), ny=dy/(d||1);
+      // 推開
+      const overlap=TOP_R*2-d;
+      a.x-=nx*overlap/2; a.y-=ny*overlap/2;
+      b.x+=nx*overlap/2; b.y+=ny*overlap/2;
+      const rel=Math.abs((b.vx-a.vx)*nx+(b.vy-a.vy)*ny);
+      // 傷害：攻擊力/防禦力 × 屬性 × 轉速比
+      const dmgTo=(atkT,defT)=>{
+        const base=45+rel*1.5;
+        const ratio=Math.pow(atkT.rpm/Math.max(defT.rpm,300),0.55);
+        return base*atkT.cfg.atk/defT.cfg.def*elemMul(atkT.key,defT.key)*ratio;
+      };
+      const dA=dmgTo(b,a), dB=dmgTo(a,b);
+      a.rpm-=dA; b.rpm-=dB;
+      a.burst+=dA*0.32/a.cfg.burstRes;
+      b.burst+=dB*0.32/b.cfg.burstRes;
+      // 高速正面對撞 → 爆體槽額外暴增
+      if(rel>120 && a.rpm>5200 && b.rpm>5200){
+        a.burst+=14/a.cfg.burstRes; b.burst+=14/b.cfg.burstRes;
+      }
+      // 擊退（攻擊力高的把人撞飛）
+      const kb=(rel*0.55+45);
+      a.vx-=nx*kb*b.cfg.atk; a.vy-=ny*kb*b.cfg.atk;
+      b.vx+=nx*kb*a.cfg.atk; b.vy+=ny*kb*a.cfg.atk;
+      shake=Math.min(10,4+rel*0.04);
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      sparkFx(mx,my,"#ffd76a",8+Math.min(10,rel*0.06));
+      // 反向迴旋：碰撞時互相吸收對方流失的轉速
+      if(a.dir!==b.dir){
+        a.rpm=Math.min(a.maxRpm,a.rpm+dB*0.18);
+        b.rpm=Math.min(b.maxRpm,b.rpm+dA*0.18);
+        if(rel>60) addText(mx,my+26,"轉速吸收!","#7fd4ff",15);
+      }
+      if(rel>110){
+        addText(mx,my-22,"轟!!","#ffd76a",32);
+        hitstop=0.09; flashT=0.16; flashX=mx; flashY=my;
+      }else if(rel>50){
+        addText(mx,my-22,"鏗!","#fff",18);
+      }
+      sHit();
+      // 爆體判定
+      for(const t of [a,b]){
+        if(t.burst>=100 && t.alive){
+          t.alive=false; t.reason="burst";
+          burstFx(t.x,t.y,t.cfg.color,30);
+          addText(t.x,t.y,"爆體!!!","#ff3df0",36);
+          shake=14; slowmo=0.6; sBoom();
+        }
+      }
+    }
+  }
+  // 火花更新
+  for(const s of sparks){ s.x+=s.vx*dt; s.y+=s.vy*dt; s.vx*=0.94; s.vy*=0.94; s.life-=dt; }
+  sparks=sparks.filter(s=>s.life>0);
+  for(const f of floatTexts){ f.y-=34*dt; f.life-=dt; }
+  floatTexts=floatTexts.filter(f=>f.life>0);
+  flashT=Math.max(0,flashT-dt);
+  if(battleTime>22 && !suddenShown){
+    suddenShown=true;
+    addText(0,-40,"決勝時刻!!","#ff5a36",30);
+    tone(700,0.3,"sawtooth",0.15);
+  }
+  shake*=Math.exp(-6*dt);
+  // 勝負判定
+  if(!battleOver && (!a.alive||!b.alive)){
+    battleOver=true;
+    setTimeout(()=>endBattle(),1100);
+    // 讓最後畫面再跑一下
+    const extra=setInterval(()=>{ drawArena(); updateHud(); },33);
+    setTimeout(()=>clearInterval(extra),1100);
+  }
+}
+function sparkFx(x,y,color,n){
+  for(let i=0;i<n;i++){
+    const a=rng()*6.283, v=60+rng()*180;
+    sparks.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:0.25+rng()*0.3,color});
+  }
+}
+function burstFx(x,y,color,n){
+  for(let i=0;i<n;i++){
+    const a=rng()*6.283, v=100+rng()*260;
+    sparks.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:0.4+rng()*0.5,color:i%3?color:"#ffffff"});
+  }
+}
+/* --- 繪圖 --- */
+function drawArena(){
+  const cv=$("arena"), ctx=cv.getContext("2d");
+  const W=cv.width, S=W/(R*2.3); // 縮放
+  ctx.clearRect(0,0,W,W);
+  ctx.save();
+  const sx=(Math.random()-0.5)*shake*S*2, sy=(Math.random()-0.5)*shake*S*2;
+  ctx.translate(W/2+sx,W/2+sy);
+  ctx.scale(S,S);
+  // 碗型場地
+  let g=ctx.createRadialGradient(0,-30,20,0,0,R+14);
+  g.addColorStop(0,"#2b3355"); g.addColorStop(0.75,"#171d36"); g.addColorStop(1,"#0b0e1c");
+  ctx.fillStyle=g;
+  ctx.beginPath(); ctx.arc(0,0,R+12,0,6.283); ctx.fill();
+  // 危險外環
+  ctx.strokeStyle="rgba(255,90,54,.55)"; ctx.lineWidth=5;
+  ctx.beginPath(); ctx.arc(0,0,R,0,6.283); ctx.stroke();
+  // 內圈紋
+  ctx.strokeStyle="rgba(120,140,220,.14)"; ctx.lineWidth=1.5;
+  [0.35,0.62,0.85].forEach(f=>{ ctx.beginPath(); ctx.arc(0,0,R*f,0,6.283); ctx.stroke(); });
+  // 火花
+  for(const s of sparks){
+    ctx.globalAlpha=Math.max(0,Math.min(1,s.life*3));
+    ctx.fillStyle=s.color;
+    ctx.beginPath(); ctx.arc(s.x,s.y,3,0,6.283); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  // 殘影拖尾（漫畫速度感）
+  for(const t of tops){
+    if(!t.alive) continue;
+    t.trail.forEach((p,idx)=>{
+      const f=idx/t.trail.length;
+      ctx.globalAlpha=f*0.28*(t.rpm/8200+0.3);
+      ctx.fillStyle=t.cfg.color;
+      ctx.beginPath(); ctx.arc(p.x,p.y,TOP_R*(0.4+f*0.5),0,6.283); ctx.fill();
+    });
+  }
+  ctx.globalAlpha=1;
+  // 陀螺
+  for(const t of tops){
+    if(!t.alive && t.reason!=="stop") continue; // 噴出/爆體的消失
+    drawTop(ctx,t);
+  }
+  // 撞擊集中線（漫畫閃光）
+  if(flashT>0){
+    ctx.save(); ctx.translate(flashX,flashY);
+    ctx.globalAlpha=Math.min(1,flashT*7);
+    ctx.strokeStyle="#fff"; ctx.lineWidth=2.5;
+    for(let i=0;i<14;i++){
+      const a=i/14*6.283+0.2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a)*16,Math.sin(a)*16);
+      ctx.lineTo(Math.cos(a)*(42+(i%3)*14),Math.sin(a)*(42+(i%3)*14));
+      ctx.stroke();
+    }
+    ctx.globalAlpha=Math.min(0.5,flashT*3);
+    ctx.fillStyle="#fff";
+    ctx.beginPath(); ctx.arc(0,0,16,0,6.283); ctx.fill();
+    ctx.restore(); ctx.globalAlpha=1;
+  }
+  // 浮動狀聲字
+  for(const f of floatTexts){
+    ctx.globalAlpha=Math.min(1,f.life*2.2);
+    ctx.font="italic 900 "+f.size+"px 'Noto Sans TC',sans-serif";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.lineWidth=4; ctx.strokeStyle="#101426";
+    ctx.strokeText(f.text,f.x,f.y);
+    ctx.fillStyle=f.color;
+    ctx.fillText(f.text,f.x,f.y);
+  }
+  ctx.globalAlpha=1;
+  // 決勝時刻：紅色脈動警示圈
+  if(battleTime>22 && !battleOver){
+    const pulse=0.35+0.3*Math.sin(battleTime*8);
+    ctx.strokeStyle="rgba(255,60,40,"+pulse+")"; ctx.lineWidth=8;
+    ctx.beginPath(); ctx.arc(0,0,R+8,0,6.283); ctx.stroke();
+  }
+  ctx.restore();
+  // 戰鬥計時（畫布左上角）
+  if(battleTime>0 && tops.length){
+    ctx.font="900 "+(W*0.045)+"px sans-serif";
+    ctx.textAlign="left"; ctx.textBaseline="top";
+    ctx.fillStyle=battleTime>22?"#ff5a36":"rgba(180,190,230,.6)";
+    ctx.fillText(battleTime.toFixed(1)+"s", W*0.04, W*0.035);
+  }
+}
+function drawTop(ctx,t){
+  const c=t.cfg, speed=t.rpm/8200;
+  ctx.save();
+  ctx.translate(t.x,t.y);
+  // 光暈
+  ctx.shadowColor=c.color; ctx.shadowBlur=18*Math.max(0.15,speed);
+  // 鋸齒外環（旋轉）
+  ctx.save(); ctx.rotate(t.angle);
+  ctx.beginPath();
+  const teeth=9;
+  for(let i=0;i<teeth*2;i++){
+    const r=i%2?TOP_R:TOP_R*0.82, a=i/(teeth*2)*6.283;
+    ctx[i?"lineTo":"moveTo"](Math.cos(a)*r,Math.sin(a)*r);
+  }
+  ctx.closePath();
+  const g=ctx.createRadialGradient(0,0,3,0,0,TOP_R);
+  g.addColorStop(0,c.color2); g.addColorStop(1,c.color);
+  ctx.fillStyle=g; ctx.fill();
+  // 輻條
+  ctx.strokeStyle="rgba(255,255,255,.7)"; ctx.lineWidth=2.5;
+  for(let i=0;i<3;i++){
+    const a=i/3*6.283;
+    ctx.beginPath(); ctx.moveTo(0,0);
+    ctx.lineTo(Math.cos(a)*TOP_R*0.75,Math.sin(a)*TOP_R*0.75); ctx.stroke();
+  }
+  ctx.restore();
+  // 中心圖示
+  ctx.shadowBlur=0;
+  ctx.fillStyle="#101426";
+  ctx.beginPath(); ctx.arc(0,0,TOP_R*0.45,0,6.283); ctx.fill();
+  ctx.font="16px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText(c.emoji,0,1);
+  // 停轉：畫倒下的樣子
+  if(!t.alive && t.reason==="stop"){
+    ctx.globalAlpha=0.9;
+    ctx.strokeStyle="#666"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,TOP_R+4,0,6.283); ctx.stroke();
+  }
+  ctx.restore();
+}
+function updateHud(){
+  tops.forEach((t,i)=>{
+    const h=$("hud"+i);
+    h.querySelector(".hrpm").textContent=t.alive||t.reason==="stop"?Math.max(0,Math.round(t.rpm))+" RPM":"─";
+    h.querySelector(".bar.rpm>i").style.width=Math.max(0,t.rpm/t.maxRpm*100)+"%";
+    h.querySelector(".bar.burst>i").style.width=Math.min(100,t.burst)+"%";
+  });
+}
+/* --- 結果 --- */
+const REASONS={stop:"先停止旋轉，敗北", out:"飛出場外，敗北", burst:"💥 爆體！敗北"};
+function endBattle(){
+  cancelAnimationFrame(battleRAF);
+  const [a,b]=tops;
+  let winner=null, loser=null;
+  if(a.alive&&!b.alive){winner=a;loser=b;}
+  else if(b.alive&&!a.alive){winner=b;loser=a;}
+  if(winner){
+    $("resBadge").textContent = loser.reason==="burst"?"💥":"🏆";
+    $("resPl").textContent = online ? (winner.i===myIdx?"YOU WIN":"YOU LOSE") : (winner.i+1)+"P WINS";
+    $("resName").textContent=plName(winner.i)+"的 "+winner.cfg.emoji+" "+winner.cfg.name+" 獲勝！";
+    $("resName").style.color=winner.cfg.color;
+    $("resReason").textContent=plName(loser.i)+"的 "+loser.cfg.name+" "+REASONS[loser.reason];
+    if(online && winner.i!==myIdx) tone(180,0.5,"sawtooth",0.15);
+    else sWin();
+  }else{
+    $("resBadge").textContent="🤝";
+    $("resPl").textContent="DRAW";
+    $("resName").textContent="同歸於盡，平手！";
+    $("resName").style.color="var(--gold)";
+    $("resReason").textContent="兩顆陀螺同時退場";
+  }
+  const bd=$("resBadge"); bd.classList.remove("flash"); void bd.offsetWidth; bd.classList.add("flash");
+  show("screen-result");
+}
+function rematch(){
+  if(online){ if(socket) socket.emit("again",{repick:false}); return; }
+  powers=[0,0]; spinPhase(0);
+}
+function restart(){
+  if(online){ if(socket) socket.emit("again",{repick:true}); return; }
+  picks=[null,null]; powers=[0,0]; beginPick(0);
+}
+</script>
+</body>
+</html>
