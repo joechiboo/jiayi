@@ -366,8 +366,13 @@ function olConnect(){
   if(typeof io==="undefined"){ $("olMsg").textContent="連線元件載入失敗，請檢查網路後重新整理"; return null; }
   socket=io(SERVER_URL);
   socket.on("connect_error",()=>{
-    if($("screen-online").classList.contains("active")||$("screen-wait").classList.contains("active"))
-      $("olMsg").textContent="連線伺服器喚醒中（免費主機約需 1 分鐘），請稍候…";
+    const msg="伺服器喚醒中（免費主機約需 1 分鐘），自動重試中…";
+    if($("screen-online").classList.contains("active")) $("olMsg").textContent=msg;
+    if($("screen-wait").classList.contains("active")) $("waitSub").textContent=msg;
+  });
+  socket.on("connect",()=>{
+    if($("screen-wait").classList.contains("active")&&$("waitSub").textContent.indexOf("喚醒")>-1)
+      $("waitSub").textContent="已連上伺服器！";
   });
   socket.on("room_created",d=>{
     myIdx=0;
