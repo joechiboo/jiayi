@@ -769,8 +769,8 @@ function update(dt){
     if(qa.alive&&qb.alive){
       const qdx=qb.x-qa.x, qdy=qb.y-qa.y, qd=Math.hypot(qdx,qdy)||1;
       const closing=-((qb.vx-qa.vx)*qdx+(qb.vy-qa.vy)*qdy)/qd;
-      const need=battleTime>14?55:95; // 後期門檻降低，慢節奏對局也觸發得到
-      if(qd<TOP_R*2+36 && closing>need){ triggerQTE(); return; }
+      const need=battleTime>10?12:(battleTime>7?25:70); // 越晚門檻越低，保證每場都用得到
+      if(qd<TOP_R*2+46 && closing>need){ triggerQTE(); return; }
     }
   }
   const alive=tops.filter(t=>t.alive);
@@ -815,7 +815,7 @@ function update(dt){
     if(d>R-TOP_R){
       const nx=t.x/d, ny=t.y/d;
       const vr=t.vx*nx+t.vy*ny; // 向外速度
-      const escape=95-45*(t.rpm/8200); // 轉速越高越容易噴出
+      const escape=95-45*(t.rpm/8200)+Math.max(0,40*(1-battleTime/8)); // 轉速越高越容易噴出；站穩加成 8 秒內漸退
       if(vr>escape){
         t.alive=false; t.reason="out";
         t.outRadius=d;
@@ -849,23 +849,30 @@ function update(dt){
       const uAtkA=ultOn(a)?a.ultAtk:1, uAtkB=ultOn(b)?b.ultAtk:1;
       const uDefA=ultOn(a)?a.ultDef:1, uDefB=ultOn(b)?b.ultDef:1;
       // 傷害：攻擊力/防禦力 × 屬性 × 轉速比 × 必殺
+      // base 以撞擊速度為主（貼身互磨的小碰撞幾乎不痛），開場前 4 秒漸進生效
+      const ramp=Math.min(1,0.35+battleTime*0.1);
       const dmgTo=(atkT,defT,ua,ud)=>{
-        const base=45+rel*1.5;
+        const base=12+rel*1.9;
         const ratio=Math.pow(atkT.rpm/Math.max(defT.rpm,300),0.55);
-        return base*atkT.cfg.atk*ua/(defT.cfg.def*ud)*elemMul(atkT.key,defT.key)*ratio;
+        return base*ramp*atkT.cfg.atk*ua/(defT.cfg.def*ud)*elemMul(atkT.key,defT.key)*ratio;
       };
       const dA=dmgTo(b,a,uAtkB,uDefA), dB=dmgTo(a,b,uAtkA,uDefB);
       a.rpm-=dA; b.rpm-=dB;
-      a.burst+=dA*0.32/a.cfg.burstRes;
-      b.burst+=dB*0.32/b.cfg.burstRes;
+      // 爆體槽：有上限（必殺命中上限翻倍）、貼身互磨幾乎不累積，大約 3~4 次大撞才會爆
+      const relScale=Math.min(1,rel/80);
+      a.burst+=Math.min(uAtkB>1.5?45:24, dA*0.13*relScale)/a.cfg.burstRes;
+      b.burst+=Math.min(uAtkA>1.5?45:24, dB*0.13*relScale)/b.cfg.burstRes;
       // 高速正面對撞 → 爆體槽額外暴增
       if(rel>120 && a.rpm>5200 && b.rpm>5200){
         a.burst+=14/a.cfg.burstRes; b.burst+=14/b.cfg.burstRes;
       }
       // 擊退（攻擊力高的把人撞飛）
       const kb=(rel*0.55+45);
-      a.vx-=nx*kb*b.cfg.atk*uAtkB; a.vy-=ny*kb*b.cfg.atk*uAtkB;
-      b.vx+=nx*kb*a.cfg.atk*uAtkA; b.vy+=ny*kb*a.cfg.atk*uAtkA;
+      // 擊退上限：普通撞不會一擊送出場，必殺命中才有撞飛級擊退
+      const kbA=Math.min(uAtkB>1.5?260:170, kb*b.cfg.atk*uAtkB);
+      const kbB=Math.min(uAtkA>1.5?260:170, kb*a.cfg.atk*uAtkA);
+      a.vx-=nx*kbA; a.vy-=ny*kbA;
+      b.vx+=nx*kbB; b.vy+=ny*kbB;
       shake=Math.min(10,4+rel*0.04);
       const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
       sparkFx(mx,my,"#ffd76a",8+Math.min(10,rel*0.06));
@@ -1004,7 +1011,7 @@ function applyQte(accs){
     const q=Math.max(0,Math.min(1,Number(accs[i])||0));
     t.ultAtk=1+1.6*q;   // 攻擊倍率：最高 2.6 倍
     t.ultDef=1+1.1*q;   // 防禦倍率：按得準也能大幅減傷
-    t.ultUntil=battleTime+2.5;
+    t.ultUntil=battleTime+4; // 4 秒內的第一撞有效（慢動作進場比較花時間）
     if(q>0.5) addText(t.x,t.y-34,plName(i)+" 必殺!!",t.cfg.color,22);
   });
   slowmo=0.35; // 慢動作衝向決勝一撞
