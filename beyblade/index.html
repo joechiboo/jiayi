@@ -354,15 +354,22 @@
 const TOPS = {
   fire:  {name:"火焰龍捲", emoji:"🔥", color:"#ff5a36", color2:"#ffb03a", type:"攻擊型",
           desc:"移動範圍大，主動衝撞。攻擊力高、但轉速消耗快。",
-          atk:1.55, def:0.8, decay:1.0, burstRes:0.9, center:0.35, jitter:400, orbit:95, dash:true},
+          atk:1.55, def:0.9, decay:0.88, burstRes:1.07, center:0.35, jitter:400, orbit:95, dash:true},
   grass: {name:"森林迴旋", emoji:"🌿", color:"#52c46b", color2:"#b4e85a", type:"持久型",
           desc:"轉速衰減最慢，靠耐力磨死對手。",
-          atk:1.0, def:1.0, decay:0.6, burstRes:1.05, center:0.7, jitter:230, orbit:75, dash:false},
+          atk:1.0, def:1.0, decay:0.7, burstRes:1.05, center:0.7, jitter:230, orbit:75, dash:false},
   water: {name:"水之堡壘", emoji:"💧", color:"#3aa0ff", color2:"#7fd4ff", type:"防禦型",
           desc:"死守中央原地打轉。防禦與抗爆體最強、攻擊最弱。",
-          atk:0.72, def:1.6, decay:0.85, burstRes:1.45, center:2.2, jitter:90, orbit:30, dash:false},
+          atk:0.72, def:1.45, decay:0.8, burstRes:1.18, center:2.2, jitter:90, orbit:30, dash:false},
+  thunder:{name:"雷霆平衡", emoji:"⚡", color:"#ffd21f", color2:"#fff2a0", type:"平衡型",
+          desc:"無屬性的全能機體，攻守耐力都在水準之上、沒有明顯弱點。",
+          atk:1.08, def:1.05, decay:0.83, burstRes:1.08, center:1.0, jitter:260, orbit:70, dash:true},
+  storm: {name:"暴風爆裂", emoji:"🌪️", color:"#b06cff", color2:"#ff9ff5", type:"爆裂型",
+          desc:"無屬性。攻擊力全場最強，但抗爆最弱、轉速掉超快。一擊必殺或自我毀滅！",
+          atk:1.85, def:0.82, decay:0.88, burstRes:1.05, center:0.4, jitter:380, orbit:110, dash:true},
 };
-const ORDER = ["fire","grass","water"];
+const ORDER = ["fire","grass","water","thunder","storm"];
+// 屬性三角只在原始三顆之間；雷霆/暴風為無屬性（不吃克制加成）
 const BEATS = {fire:"grass", grass:"water", water:"fire"};
 
 /* ---- 場地：參數只影響確定性模擬，開戰時由亂數種子推導（連線兩端必然一致） ---- */
@@ -382,7 +389,7 @@ const ARENAS = {
 };
 const ARENA_KEYS = ["bowl","volcano","ice","mini"];
 let arena = ARENAS.bowl;
-function elemMul(a,b){ if(BEATS[a]===b) return 1.45; if(BEATS[b]===a) return 0.7; return 1; }
+function elemMul(a,b){ if(BEATS[a]===b) return 1.18; if(BEATS[b]===a) return 0.87; return 1; }
 
 let picks=[null,null], powers=[0,0], dirs=[1,1], currentPicker=0, tempSel=null, tempDir=1, currentSpinner=0;
 
@@ -607,7 +614,8 @@ function revealScreen(){
   let txt;
   if(a===b) txt="鏡像對決！"+A.emoji+" 同型互撞，全看轉速與運氣！";
   else if(BEATS[a]===b) txt=A.emoji+" 屬性克制 "+B.emoji+"！<br>"+plName(0)+" 攻擊加成、"+plName(1)+" 更容易被打爆！";
-  else txt=B.emoji+" 屬性克制 "+A.emoji+"！<br>"+plName(1)+" 攻擊加成、"+plName(0)+" 更容易被打爆！";
+  else if(BEATS[b]===a) txt=B.emoji+" 屬性克制 "+A.emoji+"！<br>"+plName(1)+" 攻擊加成、"+plName(0)+" 更容易被打爆！";
+  else txt=A.emoji+" vs "+B.emoji+" 無屬性克制！<br>純實力對決，全看操作與運氣！";
   txt+='<br><span style="font-size:12px;color:var(--dim)">'+(dirs[0]!==dirs[1]
     ? "⚡ 反向迴旋對決：每次碰撞會互相吸收對方流失的轉速！"
     : "同向迴旋：硬碰硬的正面對決！")+'</span>';
@@ -925,7 +933,12 @@ function update(dt){
         addText(mx,my-22,"鏗!","#fff",18);
       }
       sHit();
-      // 爆體判定
+      // 爆體判定（同一撞雙雙達標時，爆條溢出較多者先爆；平手則轉速高者驚險倖存）
+      if(a.burst>=100 && b.burst>=100){
+        const save = a.burst!==b.burst ? (a.burst>b.burst?b:a) : (a.rpm>=b.rpm?a:b);
+        save.burst=99;
+        addText(save.x,save.y-40,"驚險倖存!!","#ffd76a",20);
+      }
       for(const t of [a,b]){
         if(t.burst>=100 && t.alive){
           t.alive=false; t.reason="burst";

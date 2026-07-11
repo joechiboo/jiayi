@@ -38,7 +38,7 @@ function mulberry32(a) {
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
-function elemMul(a, b) { if (BEATS[a] === b) return 1.45; if (BEATS[b] === a) return 0.7; return 1; }
+function elemMul(a, b) { if (BEATS[a] === b) return 1.18; if (BEATS[b] === a) return 0.87; return 1; }
 
 /* ---------- 玩家輸入模型 ----------
  * 發射力道與 QTE 準度都來自小遊戲按鍵時機，這裡用均勻分布的 off 模擬
@@ -96,8 +96,8 @@ function simulate(keyA, keyB, seed, arenaKey) {
           const [ua, ub] = tops;
           if (ua.alive && ub.alive) {
             const ddx = ub.x - ua.x, ddy = ub.y - ua.y, dd = Math.hypot(ddx, ddy) || 1;
-            ua.vx += ddx / dd * 110; ua.vy += ddy / dd * 110;
-            ub.vx -= ddx / dd * 110; ub.vy -= ddy / dd * 110;
+            ua.vx += ddx / dd * 60; ua.vy += ddy / dd * 60;
+            ub.vx -= ddx / dd * 60; ub.vy -= ddy / dd * 60;
           }
           return;
         }
@@ -193,6 +193,11 @@ function simulate(keyA, keyB, seed, arenaKey) {
         if (a.dir !== b.dir) {
           a.rpm = Math.min(a.maxRpm, a.rpm + dB * 0.18);
           b.rpm = Math.min(b.maxRpm, b.rpm + dA * 0.18);
+        }
+        // 同 index.html：同一撞雙雙達標時，爆條溢出較多者先爆；平手則轉速高者驚險倖存
+        if (a.burst >= 100 && b.burst >= 100) {
+          const save = a.burst !== b.burst ? (a.burst > b.burst ? b : a) : (a.rpm >= b.rpm ? a : b);
+          save.burst = 99;
         }
         for (const t of [a, b]) {
           if (t.burst >= 100 && t.alive) {

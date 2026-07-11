@@ -62,13 +62,14 @@ function runOne(pa, pb, da, db, powA, powB, seed, useUlt, arenaKey){
 }
 runOne`;
 
-const matchups = [
-  ["fire","fire"],["fire","grass"],["fire","water"],
-  ["grass","grass"],["grass","water"],["water","water"],
-];
-
 const ctx = makeCtx();
 const runOne = vm.runInContext(driver, ctx);
+
+// 從遊戲程式碼取得目前的陀螺清單，自動涵蓋新增角色
+const order = vm.runInContext("ORDER", ctx);
+const matchups = [];
+for (let i = 0; i < order.length; i++)
+  for (let j = i; j < order.length; j++) matchups.push([order[i], order[j]]);
 
 const arenaKeys = vm.runInContext("ARENA_KEYS", ctx);
 for (const ak of arenaKeys) {
@@ -77,11 +78,12 @@ for (const ak of arenaKeys) {
   for (const [pa, pb] of matchups) {
     const ends = [], qtes = [], lives = [];
     const reasons = { stop: 0, out: 0, burst: 0 };
-    let trig = 0, n = 0, short = 0;
+    let trig = 0, n = 0, short = 0, winA = 0, winB = 0, draw = 0;
     for (let seed = 1; seed <= 120; seed++) {
       for (const [powA, powB] of [[0.9,0.7],[0.6,0.6],[1,1],[0.7,0.95]]) {
         const r = runOne(pa, pb, 1, seed%2? -1:1, powA, powB, seed*7919+13, true, ak);
         n++; ends.push(r.end);
+        if (r.winner === 0) winA++; else if (r.winner === 1) winB++; else draw++;
         reasons[r.reason] = (reasons[r.reason] || 0) + 1;
         if (r.end < 5) short++;
         if (r.qteAt !== null) { trig++; qtes.push(r.qteAt); lives.push(r.end - r.qteAt); }
@@ -94,7 +96,8 @@ for (const ak of arenaKeys) {
       String(med(ends)).padStart(8)+"s", String((trig/n*100).toFixed(0)+"%").padStart(9),
       String(med(qtes)).padStart(10)+"s", String(avg(lives)).padStart(11)+"s",
       ("  "+(reasons.stop||0)+"/"+(reasons.out||0)+"/"+(reasons.burst||0)).padStart(18),
-      String((short/n*100).toFixed(0)+"%").padStart(9)
+      String((short/n*100).toFixed(0)+"%").padStart(9),
+      ("  勝 "+(winA/n*100).toFixed(0)+"/"+(winB/n*100).toFixed(0)+"/和"+(draw/n*100).toFixed(0)+"%")
     );
   }
 }
