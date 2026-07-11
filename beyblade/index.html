@@ -364,6 +364,24 @@ const TOPS = {
 };
 const ORDER = ["fire","grass","water"];
 const BEATS = {fire:"grass", grass:"water", water:"fire"};
+
+/* ---- 場地：參數只影響確定性模擬，開戰時由亂數種子推導（連線兩端必然一致） ---- */
+const ARENAS = {
+  bowl:   {name:"標準競技場", emoji:"🏟️", R:170, damp:1.15, escapeAdd:0,  decayMul:1,
+           desc:"均衡的碗型場地",
+           ring:"rgba(255,90,54,.55)",  bg1:"#2b3355", bg2:"#171d36", bg3:"#0b0e1c", hill:0},
+  volcano:{name:"火山口",     emoji:"🌋", R:170, damp:1.15, escapeAdd:0,  decayMul:1.08,
+           desc:"中央隆起，陀螺被推向外圈",
+           ring:"rgba(255,120,40,.8)",  bg1:"#4a2318", bg2:"#241016", bg3:"#0e0810", hill:190},
+  ice:    {name:"冰晶湖面",   emoji:"🧊", R:170, damp:0.65, escapeAdd:15, decayMul:0.88,
+           desc:"超滑！擊退滑得又遠又久，轉速衰減慢",
+           ring:"rgba(127,212,255,.7)", bg1:"#1d3a55", bg2:"#12233a", bg3:"#0a1220", hill:0},
+  mini:   {name:"迷你鬥場",   emoji:"🎯", R:132, damp:1.15, escapeAdd:12, decayMul:1,
+           desc:"超小場地，貼身肉搏",
+           ring:"rgba(255,197,61,.7)",  bg1:"#3a2f22", bg2:"#1d1a14", bg3:"#0e0b08", hill:0},
+};
+const ARENA_KEYS = ["bowl","volcano","ice","mini"];
+let arena = ARENAS.bowl;
 function elemMul(a,b){ if(BEATS[a]===b) return 1.45; if(BEATS[b]===a) return 0.7; return 1; }
 
 let picks=[null,null], powers=[0,0], dirs=[1,1], currentPicker=0, tempSel=null, tempDir=1, currentSpinner=0;
@@ -711,6 +729,7 @@ function makeTop(i){
   };
 }
 function startBattle(seed){
+  arena=ARENAS[ARENA_KEYS[(seed||1)%ARENA_KEYS.length]]; // 場地由種子決定，連線兩端一致
   rng=mulberry32((seed||1)>>>0); acc=0;
   tops=[makeTop(0),makeTop(1)];
   sparks=[]; battleOver=false; shake=0; slowmo=0;
@@ -730,13 +749,15 @@ function startBattle(seed){
   cv.style.width=size+"px"; cv.style.height=size+"px";
   cv.style.margin="0 auto";
   show("screen-battle");
-  // 倒數
+  // 揭曉場地 → 倒數
   const cd=$("countdown");
-  cd.classList.remove("shoot");
-  let n=3;
-  cd.textContent="3"; sTick();
+  cd.classList.add("shoot");
+  cd.textContent=arena.emoji+" "+arena.name;
+  sBoom();
+  let n=4;
   const t=setInterval(()=>{
     n--;
+    if(n===3) cd.classList.remove("shoot");
     if(n>0){ cd.textContent=n; sTick(); }
     else{
       clearInterval(t);
@@ -769,8 +790,9 @@ function update(dt){
     if(qa.alive&&qb.alive){
       const qdx=qb.x-qa.x, qdy=qb.y-qa.y, qd=Math.hypot(qdx,qdy)||1;
       const closing=-((qb.vx-qa.vx)*qdx+(qb.vy-qa.vy)*qdy)/qd;
-      const need=battleTime>10?12:(battleTime>7?25:70); // 越晚門檻越低，保證每場都用得到
-      if(qd<TOP_R*2+46 && closing>need){ triggerQTE(); return; }
+      const need=battleTime>14?4:(battleTime>10?12:(battleTime>7?25:70)); // 越晚門檻越低，保證每場都用得到
+      // 16 秒還沒觸發（例如同向繞圈追不上彼此）就強制引爆
+      if((qd<TOP_R*2+46 && closing>need) || battleTime>16){ triggerQTE(); return; }
     }
   }
   const alive=tops.filter(t=>t.alive);
@@ -779,10 +801,18 @@ function update(dt){
     const c=t.cfg;
     // 轉速衰減（22秒後進入決勝時刻，加速衰減強制分勝負）
     const sudden = battleTime>22 ? 1+(battleTime-22)*0.65 : 1;
-    t.rpm-=(140+t.rpm*0.02)*c.decay*sudden*dt;
+    t.rpm-=(140+t.rpm*0.02)*c.decay*arena.decayMul*sudden*dt;
     // 碗型場地：往中心的力
     const k=1.6*c.center;
     t.vx+=-t.x*k*dt; t.vy+=-t.y*k*dt;
+    // 火山口：中央隆起把陀螺往外推
+    if(arena.hill){
+      const dh=Math.hypot(t.x,t.y)||1;
+      if(dh<70){
+        const push=(1-dh/70)*arena.hill;
+        t.vx+=t.x/dh*push*dt; t.vy+=t.y/dh*push*dt;
+      }
+    }
     // 繞場軌道運動（轉速越高繞越快，移動範圍大）
     const d0=Math.hypot(t.x,t.y)||1;
     const orb=c.orbit*(t.rpm/8200);
@@ -803,8 +833,8 @@ function update(dt){
         addText(t.x,t.y-30,"咻—","#fff",14);
       }
     }
-    // 阻尼
-    const damp=Math.exp(-1.15*dt);
+    // 阻尼（冰面超滑）
+    const damp=Math.exp(-arena.damp*dt);
     t.vx*=damp; t.vy*=damp;
     t.x+=t.vx*dt; t.y+=t.vy*dt;
     t.trail.push({x:t.x,y:t.y}); if(t.trail.length>9) t.trail.shift();
@@ -812,10 +842,10 @@ function update(dt){
     t.hitCd=Math.max(0,t.hitCd-dt);
     // 邊界：噴出 or 反彈
     const d=Math.hypot(t.x,t.y);
-    if(d>R-TOP_R){
+    if(d>arena.R-TOP_R){
       const nx=t.x/d, ny=t.y/d;
       const vr=t.vx*nx+t.vy*ny; // 向外速度
-      const escape=95-45*(t.rpm/8200)+Math.max(0,40*(1-battleTime/8)); // 轉速越高越容易噴出；站穩加成 8 秒內漸退
+      const escape=95-45*(t.rpm/8200)+arena.escapeAdd+Math.max(0,40*(1-battleTime/8)); // 轉速越高越容易噴出；站穩加成 8 秒內漸退
       if(vr>escape){
         t.alive=false; t.reason="out";
         t.outRadius=d;
@@ -823,7 +853,7 @@ function update(dt){
         addText(t.x*0.8,t.y*0.8,"飛出去啦!!",t.cfg.color,24);
         sHit();
       }else{
-        t.x=nx*(R-TOP_R); t.y=ny*(R-TOP_R);
+        t.x=nx*(arena.R-TOP_R); t.y=ny*(arena.R-TOP_R);
         t.vx-=1.6*vr*nx; t.vy-=1.6*vr*ny;
         t.vx*=0.7; t.vy*=0.7;
         if(vr>25) sparkFx(t.x,t.y,"#ffffff",4);
@@ -1015,6 +1045,13 @@ function applyQte(accs){
     t.ultUntil=battleTime+4; // 4 秒內的第一撞有效（慢動作進場比較花時間）
     if(q>0.5) addText(t.x,t.y-34,plName(i)+" 必殺!!",t.cfg.color,22);
   });
+  // 雙方互衝，保證決勝一撞真的發生（力道別太大，避免必殺一撞必死）
+  const [ua,ub]=tops;
+  if(ua.alive&&ub.alive){
+    const ddx=ub.x-ua.x, ddy=ub.y-ua.y, dd=Math.hypot(ddx,ddy)||1;
+    ua.vx+=ddx/dd*60; ua.vy+=ddy/dd*60;
+    ub.vx-=ddx/dd*60; ub.vy-=ddy/dd*60;
+  }
   slowmo=0.35; // 慢動作衝向決勝一撞
   sLaunch();
 }
@@ -1022,23 +1059,38 @@ function applyQte(accs){
 /* --- 繪圖 --- */
 function drawArena(){
   const cv=$("arena"), ctx=cv.getContext("2d");
-  const W=cv.width, S=W/(R*2.3); // 縮放
+  const aR=arena.R;
+  const W=cv.width, S=W/(aR*2.3); // 縮放
   ctx.clearRect(0,0,W,W);
   ctx.save();
   const sx=(Math.random()-0.5)*shake*S*2, sy=(Math.random()-0.5)*shake*S*2;
   ctx.translate(W/2+sx,W/2+sy);
   ctx.scale(S,S);
-  // 碗型場地
-  let g=ctx.createRadialGradient(0,-30,20,0,0,R+14);
-  g.addColorStop(0,"#2b3355"); g.addColorStop(0.75,"#171d36"); g.addColorStop(1,"#0b0e1c");
+  // 碗型場地（配色依場地）
+  let g=ctx.createRadialGradient(0,-30,20,0,0,aR+14);
+  g.addColorStop(0,arena.bg1); g.addColorStop(0.75,arena.bg2); g.addColorStop(1,arena.bg3);
   ctx.fillStyle=g;
-  ctx.beginPath(); ctx.arc(0,0,R+12,0,6.283); ctx.fill();
+  ctx.beginPath(); ctx.arc(0,0,aR+12,0,6.283); ctx.fill();
+  // 火山口：中央隆起發光
+  if(arena.hill){
+    const hg=ctx.createRadialGradient(0,0,4,0,0,70);
+    hg.addColorStop(0,"rgba(255,140,50,.55)"); hg.addColorStop(0.5,"rgba(200,60,20,.28)"); hg.addColorStop(1,"rgba(120,30,10,0)");
+    ctx.fillStyle=hg;
+    ctx.beginPath(); ctx.arc(0,0,70,0,6.283); ctx.fill();
+  }
+  // 冰面：反光斜紋
+  if(arena.damp<1){
+    ctx.strokeStyle="rgba(190,230,255,.10)"; ctx.lineWidth=10;
+    for(let i=-2;i<=2;i++){
+      ctx.beginPath(); ctx.moveTo(-aR+i*55,-aR); ctx.lineTo(aR+i*55,aR); ctx.stroke();
+    }
+  }
   // 危險外環
-  ctx.strokeStyle="rgba(255,90,54,.55)"; ctx.lineWidth=5;
-  ctx.beginPath(); ctx.arc(0,0,R,0,6.283); ctx.stroke();
+  ctx.strokeStyle=arena.ring; ctx.lineWidth=5;
+  ctx.beginPath(); ctx.arc(0,0,aR,0,6.283); ctx.stroke();
   // 內圈紋
   ctx.strokeStyle="rgba(120,140,220,.14)"; ctx.lineWidth=1.5;
-  [0.35,0.62,0.85].forEach(f=>{ ctx.beginPath(); ctx.arc(0,0,R*f,0,6.283); ctx.stroke(); });
+  [0.35,0.62,0.85].forEach(f=>{ ctx.beginPath(); ctx.arc(0,0,aR*f,0,6.283); ctx.stroke(); });
   // 火花
   for(const s of sparks){
     ctx.globalAlpha=Math.max(0,Math.min(1,s.life*3));
@@ -1094,15 +1146,21 @@ function drawArena(){
   if(battleTime>22 && !battleOver){
     const pulse=0.35+0.3*Math.sin(battleTime*8);
     ctx.strokeStyle="rgba(255,60,40,"+pulse+")"; ctx.lineWidth=8;
-    ctx.beginPath(); ctx.arc(0,0,R+8,0,6.283); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,aR+8,0,6.283); ctx.stroke();
   }
   ctx.restore();
-  // 戰鬥計時（畫布左上角）
+  // 戰鬥計時（左上）與場地名（右上）
   if(battleTime>0 && tops.length){
     ctx.font="900 "+(W*0.045)+"px sans-serif";
     ctx.textAlign="left"; ctx.textBaseline="top";
     ctx.fillStyle=battleTime>22?"#ff5a36":"rgba(180,190,230,.6)";
     ctx.fillText(battleTime.toFixed(1)+"s", W*0.04, W*0.035);
+  }
+  if(tops.length){
+    ctx.font="700 "+(W*0.038)+"px 'Noto Sans TC',sans-serif";
+    ctx.textAlign="right"; ctx.textBaseline="top";
+    ctx.fillStyle="rgba(180,190,230,.55)";
+    ctx.fillText(arena.emoji+" "+arena.name, W*0.96, W*0.035);
   }
 }
 function drawTop(ctx,t){
