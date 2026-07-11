@@ -120,7 +120,7 @@ io.on("connection", (socket) => {
       io.to(roomId).emit("ult_result", { accs });
     };
     if (room.ults[0] !== null && room.ults[1] !== null) finish();
-    else if (!room.ultTimer) room.ultTimer = setTimeout(finish, 4000);
+    else if (!room.ultTimer) room.ultTimer = setTimeout(finish, 8000); // 要大於前端 5 秒時機視窗＋網路延遲
   });
 
   // 任一方按「再戰／重選」，整房一起進入下一輪

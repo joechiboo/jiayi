@@ -943,7 +943,7 @@ function burstFx(x,y,color,n){
 // 模擬偵測到「即將大力對撞」→ 兩端同一步定格 → 各自按時機條 →
 // 結果（本機直接、連線經伺服器湊齊）套用到接下來那一撞 → 從同一步繼續確定性模擬
 let qteDone=false, qteActive=false, qtePanels=[], pendingUltAccs=null;
-const QTE_WINDOW=1.6;
+const QTE_WINDOW=5;
 function triggerQTE(){
   qteDone=true;
   if(pendingUltAccs){ qteActive=true; applyQte(pendingUltAccs); pendingUltAccs=null; return; }
@@ -973,6 +973,7 @@ function buildQtePanels(){
       const el=(now-st.t0)/1000;
       if(el>=QTE_WINDOW){ settleQte(st,0,true); return; }
       st.needle.style.left=(50+Math.sin(st.phase+el*5.2)*47)+"%";
+      st.msg.textContent="按在紅心＝超必殺 ("+Math.ceil(QTE_WINDOW-el)+")";
       st.raf=requestAnimationFrame(loop);
     };
     st.raf=requestAnimationFrame(loop);
