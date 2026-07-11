@@ -19,20 +19,22 @@
     font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
     touch-action:manipulation; user-select:none; -webkit-user-select:none;
     overflow-x:hidden;
+    -webkit-text-size-adjust:100%; text-size-adjust:100%;
   }
-  .screen{display:none; min-height:100dvh; padding:20px 16px 32px; max-width:520px; margin:0 auto;
+  .screen{display:none; min-height:100dvh; max-width:520px; margin:0 auto;
+    padding:clamp(12px,3vh,20px) clamp(12px,4vw,16px) calc(clamp(16px,4vh,32px) + env(safe-area-inset-bottom));
     flex-direction:column; align-items:center;}
   .screen.active{display:flex;}
   .eyebrow{letter-spacing:.4em; font-size:11px; color:var(--dim); text-transform:uppercase;}
   h1{font-size:clamp(34px,9vw,46px); font-weight:900; letter-spacing:.06em; line-height:1.15;
     background:linear-gradient(120deg,var(--fire),var(--gold) 45%,var(--water));
     -webkit-background-clip:text; background-clip:text; color:transparent; text-align:center; margin:8px 0 4px;}
-  h2{font-size:22px; font-weight:900; letter-spacing:.12em; margin:4px 0 2px; text-align:center;}
+  h2{font-size:clamp(18px,5.5vw,22px); font-weight:900; letter-spacing:.12em; margin:4px 0 2px; text-align:center;}
   .sub{color:var(--dim); font-size:13px; text-align:center; line-height:1.7;}
   .btn{
     display:block; width:100%; max-width:340px; margin-top:14px;
-    padding:15px 18px; border:none; border-radius:14px;
-    font:900 17px/1 "Noto Sans TC",sans-serif; letter-spacing:.25em; text-indent:.25em;
+    padding:14px 16px; border:none; border-radius:14px;
+    font:900 clamp(15px,4.5vw,17px)/1 "Noto Sans TC",sans-serif; letter-spacing:.25em; text-indent:.25em;
     color:#101426; background:linear-gradient(120deg,var(--gold),#ffde7a);
     box-shadow:0 6px 18px rgba(255,197,61,.28); cursor:pointer;
   }
@@ -109,20 +111,22 @@
   .tneedle{position:absolute; top:-4px; bottom:-4px; width:4px; background:#fff; left:50%;
     box-shadow:0 0 10px #fff; border-radius:2px;}
   .bigTap{
-    width:200px; height:200px; border-radius:50%; border:none; margin-top:8px;
-    font:900 26px/1.3 "Noto Sans TC",sans-serif; letter-spacing:.2em; color:#101426;
+    width:clamp(140px,45vw,200px); height:clamp(140px,45vw,200px); border-radius:50%; border:none; margin-top:8px;
+    font:900 clamp(20px,6vw,26px)/1.3 "Noto Sans TC",sans-serif; letter-spacing:.2em; color:#101426;
     background:radial-gradient(circle at 35% 30%, #ffe9a8, var(--gold) 60%, #d99a12);
     box-shadow:0 10px 26px rgba(255,197,61,.35); cursor:pointer;
   }
   .bigTap:active{transform:scale(.94);}
-  .huge{font-size:44px; font-weight:900; letter-spacing:.05em; margin-top:10px;}
+  .huge{font-size:clamp(32px,9vw,44px); font-weight:900; letter-spacing:.05em; margin-top:10px;}
   .rpmShow{color:var(--gold); text-shadow:0 0 18px rgba(255,197,61,.5);}
 
   /* ---- 戰鬥 ---- */
   #screen-battle{padding-top:12px;}
   .hud{display:flex; gap:10px; width:100%;}
-  .hudBox{flex:1; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:8px 10px;}
-  .hudBox .hn{font-size:12px; font-weight:900; color:var(--c); letter-spacing:.05em; display:flex; justify-content:space-between;}
+  .hudBox{flex:1; min-width:0; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:8px 10px;}
+  .hudBox .hn{font-size:12px; font-weight:900; color:var(--c); letter-spacing:.05em; display:flex; justify-content:space-between; gap:6px;}
+  .hudBox .hnm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .hudBox .hrpm{flex:none;}
   .hudBox .hr{font-size:11px; color:var(--dim); margin-top:2px;}
   .bar{height:7px; border-radius:4px; background:#0a0e1c; margin-top:5px; overflow:hidden;}
   .bar>i{display:block; height:100%; border-radius:4px; transition:width .12s linear;}
@@ -132,9 +136,28 @@
   #arenaWrap{position:relative; width:100%; margin-top:12px;}
   #arena{width:100%; display:block; border-radius:20px;}
   #countdown{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-size:96px; font-weight:900; font-style:italic; color:var(--gold);
+    font-size:clamp(56px,22vw,96px); font-weight:900; font-style:italic; color:var(--gold);
     text-shadow:0 0 30px rgba(255,197,61,.7); pointer-events:none;}
   #countdown.shoot{font-size:clamp(34px,10vw,56px); letter-spacing:.04em;}
+
+  /* ---- 必殺時機 QTE ---- */
+  #qte{position:absolute; inset:0; display:none; flex-direction:column; align-items:center;
+    justify-content:center; gap:12px; background:rgba(8,10,24,.78); border-radius:20px; z-index:5;}
+  #qte.active{display:flex;}
+  .qteTitle{font-size:clamp(24px,7vw,34px); font-weight:900; font-style:italic; color:var(--gold);
+    text-shadow:0 0 24px rgba(255,197,61,.8); letter-spacing:.1em; animation:qteZoom .3s ease-out;}
+  @keyframes qteZoom{0%{transform:scale(2.2); opacity:0;}100%{transform:scale(1); opacity:1;}}
+  .qteCols{display:flex; gap:12px; width:92%;}
+  .qtePanel{flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:8px;
+    background:var(--panel); border:2px solid var(--c,var(--line)); border-radius:14px; padding:10px;}
+  .qtePanel .qpName{font-size:12px; font-weight:900; color:var(--c,var(--gold)); letter-spacing:.1em;}
+  .qtePanel .tbar{height:34px;}
+  .qteHit{width:100%; padding:12px 0; border:none; border-radius:12px;
+    font:900 18px/1 "Noto Sans TC",sans-serif; letter-spacing:.2em; text-indent:.2em; color:#101426;
+    background:linear-gradient(120deg,var(--gold),#ffde7a); cursor:pointer;}
+  .qteHit:active{transform:scale(.95);}
+  .qteHit:disabled{opacity:.45;}
+  .qtePanel .qpMsg{font-size:12px; color:var(--dim); min-height:16px; font-weight:700;}
 
   /* ---- 連線 ---- */
   #olCode{
@@ -146,11 +169,27 @@
   #olCode:focus{border-color:var(--gold);}
 
   /* ---- 結果 ---- */
-  .resultBadge{font-size:86px; margin-top:26px;}
-  .winName{font-size:30px; font-weight:900; letter-spacing:.08em; margin-top:6px;}
+  .resultBadge{font-size:clamp(64px,18vw,86px); margin-top:26px;}
+  .winName{font-size:clamp(24px,7.5vw,30px); font-weight:900; letter-spacing:.08em; margin-top:6px;}
   .reason{margin-top:10px; font-size:15px; color:var(--dim); letter-spacing:.15em;}
   .flash{animation:flashIn .5s ease-out;}
   @keyframes flashIn{0%{transform:scale(1.6); opacity:0;}100%{transform:scale(1); opacity:1;}}
+  .ver{font-size:11px; color:var(--dim); opacity:.7; letter-spacing:.12em; margin-top:8px;}
+  body.winBg{background:radial-gradient(1200px 800px at 50% -10%, #1e4a2e 0%, #0d1f14 55%);}
+  body.loseBg{background:radial-gradient(1200px 800px at 50% -10%, #5a2b33 0%, #241318 55%);}
+
+  /* ---- 小螢幕微調 ---- */
+  @media (max-width:380px){
+    .card{padding:12px 12px; gap:10px;}
+    .card .badge{font-size:32px;}
+    .card .nm{font-size:16px;}
+    .vsCard .badge{font-size:36px;}
+    .modeBtn{padding:14px 8px;}
+    .modeBtn .ic{font-size:26px;}
+    .modeBtn .t{font-size:14px; letter-spacing:.1em;}
+    .shield{font-size:64px; margin:18px 0 6px;}
+    .btn{letter-spacing:.15em; text-indent:.15em;}
+  }
 </style>
 </head>
 <body>
@@ -177,6 +216,7 @@
   <button class="btn" onclick="startLocal()">🤝 本機對戰</button>
   <button class="btn ghost" onclick="showOnline()">🌐 連線對戰</button>
   <div class="spacer"></div>
+  <div class="ver" id="verTag"></div>
 </div>
 
 <!-- 連線設定 -->
@@ -288,6 +328,10 @@
   <div id="arenaWrap">
     <canvas id="arena"></canvas>
     <div id="countdown"></div>
+    <div id="qte">
+      <div class="qteTitle" id="qteTitle">⚡ 必殺時機 ⚡</div>
+      <div class="qteCols" id="qteCols"></div>
+    </div>
   </div>
 </div>
 
@@ -391,6 +435,10 @@ function olConnect(){
     if(d.dirs) dirs=d.dirs.slice();
     startBattle(d.seed);
   });
+  socket.on("ult_result",d=>{
+    if(qteActive) applyQte(d.accs);
+    else if(!qteDone) pendingUltAccs=d.accs; // 對方比我先觸發（極端時間差）時先存起來
+  });
   socket.on("again",d=>{
     powers=[0,0];
     if(d.repick){ picks=[null,null]; beginPick(myIdx); }
@@ -423,7 +471,19 @@ function olJoin(){
 
 /* ================= 畫面切換 ================= */
 const $=id=>document.getElementById(id);
-function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); $(id).classList.add("active"); window.scrollTo(0,0); }
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $(id).classList.add("active");
+  if(id!=="screen-result") document.body.classList.remove("winBg","loseBg");
+  window.scrollTo(0,0);
+}
+
+// 版號＝本頁發佈時間（部署後由伺服器的 Last-Modified 自動帶入）
+(function(){
+  const d=new Date(document.lastModified);
+  const p=n=>String(n).padStart(2,"0");
+  if(!isNaN(d)) $("verTag").textContent="v"+d.getFullYear()+"."+p(d.getMonth()+1)+"."+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());
+})();
 
 /* ================= 音效（Web Audio 極簡版） ================= */
 let AC=null;
@@ -539,9 +599,10 @@ function revealScreen(){
 function startSpinFlow(){ spinPhase(online?myIdx:0); }
 
 /* ================= 發射小遊戲 ================= */
-let timingRAF=null, mashTimerId=null;
+let timingRAF=null, mashTimerId=null, spinAutoId=null;
 function spinPhase(p){
   currentSpinner=p;
+  clearInterval(spinAutoId); spinAutoId=null;
   $("spinTitle").textContent=(online?"你來發射！":(p+1)+"P 發射！")+" "+TOPS[picks[p]].emoji;
   $("spinSub").textContent="大聲喊出「3, 2, 1, GO SHOOT！」選擇發射方式";
   $("modeBtns").style.display="flex";
@@ -561,10 +622,22 @@ function finishSpin(power){
   r.textContent=rpm+" RPM";
   r.classList.remove("flash"); void r.offsetWidth; r.classList.add("flash");
   $("spinSub").textContent = power>0.92?"神級發射！！":(power>0.75?"漂亮！":"還行，上場拚拚看！");
-  $("spinNext").style.display="block";
+  const nextBtn=$("spinNext");
+  nextBtn.style.display="block";
+  // 倒數 5 秒自動完成
+  let left=5;
+  nextBtn.textContent="完成 ("+left+")";
+  clearInterval(spinAutoId);
+  spinAutoId=setInterval(()=>{
+    left--;
+    if(left<=0) spinDone();
+    else nextBtn.textContent="完成 ("+left+")";
+  },1000);
   sLaunch();
 }
 function spinDone(){
+  clearInterval(spinAutoId); spinAutoId=null;
+  $("spinNext").textContent="完成";
   if(online){
     socket.emit("launch",{power:powers[currentSpinner]});
     showWait("🚀","等待對手發射…","雙方都發射後立刻開戰！");
@@ -633,6 +706,7 @@ function makeTop(i){
     maxRpm:4000+4200*powers[i],
     burst:0, angle:rng()*6.28, dir:dirs[i]===-1?-1:1,
     alive:true, reason:"", dashT:1.2+rng(),
+    ultAtk:1, ultDef:1, ultUntil:-1,
     hitCd:0, outRadius:0, trail:[]
   };
 }
@@ -641,15 +715,20 @@ function startBattle(seed){
   tops=[makeTop(0),makeTop(1)];
   sparks=[]; battleOver=false; shake=0; slowmo=0;
   floatTexts=[]; flashT=0; hitstop=0; battleTime=0; suddenShown=false;
+  qteDone=false; qteActive=false; pendingUltAccs=null;
+  qtePanels.forEach(p=>cancelAnimationFrame(p.raf)); qtePanels=[];
+  $("qte").classList.remove("active");
   [0,1].forEach(i=>{
     const h=$("hud"+i), c=tops[i].cfg;
     h.style.setProperty("--c",c.color);
     h.querySelector(".hnm").textContent=plName(i)+" "+c.emoji+" "+c.name;
   });
   const cv=$("arena");
-  const size=Math.min(480, cv.parentElement.clientWidth||360);
+  // 同時受寬度與視窗高度限制（扣掉 HUD 約 130px），避免矮螢幕跑版
+  const size=Math.max(220, Math.min(480, cv.parentElement.clientWidth||360, window.innerHeight-130));
   cv.width=size*2; cv.height=size*2;
-  cv.style.height=cv.style.width="100%";
+  cv.style.width=size+"px"; cv.style.height=size+"px";
+  cv.style.margin="0 auto";
   show("screen-battle");
   // 倒數
   const cd=$("countdown");
@@ -675,14 +754,25 @@ function tick(now){
   let frameDt=Math.min(0.1,(now-lastT)/1000); lastT=now;
   if(hitstop>0){ hitstop-=frameDt; frameDt=0; }          // 漫畫式撞擊定格
   else if(slowmo>0){ slowmo-=frameDt; frameDt*=0.25; }
-  acc+=frameDt;
+  if(qteActive) acc=0;            // 必殺時機：暫停模擬，等雙方按完
+  else acc+=frameDt;
   // 固定步長模擬：連線時兩邊步數與亂數序列完全一致，演出才會同步
-  while(acc>=STEP && !battleOver){ battleTime+=STEP; update(STEP); acc-=STEP; }
+  while(acc>=STEP && !battleOver && !qteActive){ battleTime+=STEP; update(STEP); acc-=STEP; }
   drawArena();
   updateHud();
   if(!battleOver) battleRAF=requestAnimationFrame(tick);
 }
 function update(dt){
+  // 必殺時機：偵測「即將大力對撞」。條件只依模擬狀態，連線兩端會在同一步觸發
+  if(!qteDone && battleTime>3){
+    const [qa,qb]=tops;
+    if(qa.alive&&qb.alive){
+      const qdx=qb.x-qa.x, qdy=qb.y-qa.y, qd=Math.hypot(qdx,qdy)||1;
+      const closing=-((qb.vx-qa.vx)*qdx+(qb.vy-qa.vy)*qdy)/qd;
+      const need=battleTime>14?55:95; // 後期門檻降低，慢節奏對局也觸發得到
+      if(qd<TOP_R*2+36 && closing>need){ triggerQTE(); return; }
+    }
+  }
   const alive=tops.filter(t=>t.alive);
   for(const t of tops){
     if(!t.alive) continue;
@@ -754,13 +844,17 @@ function update(dt){
       a.x-=nx*overlap/2; a.y-=ny*overlap/2;
       b.x+=nx*overlap/2; b.y+=ny*overlap/2;
       const rel=Math.abs((b.vx-a.vx)*nx+(b.vy-a.vy)*ny);
-      // 傷害：攻擊力/防禦力 × 屬性 × 轉速比
-      const dmgTo=(atkT,defT)=>{
+      // 必殺加成（QTE 後 2.5 秒內的第一次碰撞有效）
+      const ultOn=t=>battleTime<t.ultUntil;
+      const uAtkA=ultOn(a)?a.ultAtk:1, uAtkB=ultOn(b)?b.ultAtk:1;
+      const uDefA=ultOn(a)?a.ultDef:1, uDefB=ultOn(b)?b.ultDef:1;
+      // 傷害：攻擊力/防禦力 × 屬性 × 轉速比 × 必殺
+      const dmgTo=(atkT,defT,ua,ud)=>{
         const base=45+rel*1.5;
         const ratio=Math.pow(atkT.rpm/Math.max(defT.rpm,300),0.55);
-        return base*atkT.cfg.atk/defT.cfg.def*elemMul(atkT.key,defT.key)*ratio;
+        return base*atkT.cfg.atk*ua/(defT.cfg.def*ud)*elemMul(atkT.key,defT.key)*ratio;
       };
-      const dA=dmgTo(b,a), dB=dmgTo(a,b);
+      const dA=dmgTo(b,a,uAtkB,uDefA), dB=dmgTo(a,b,uAtkA,uDefB);
       a.rpm-=dA; b.rpm-=dB;
       a.burst+=dA*0.32/a.cfg.burstRes;
       b.burst+=dB*0.32/b.cfg.burstRes;
@@ -770,11 +864,17 @@ function update(dt){
       }
       // 擊退（攻擊力高的把人撞飛）
       const kb=(rel*0.55+45);
-      a.vx-=nx*kb*b.cfg.atk; a.vy-=ny*kb*b.cfg.atk;
-      b.vx+=nx*kb*a.cfg.atk; b.vy+=ny*kb*a.cfg.atk;
+      a.vx-=nx*kb*b.cfg.atk*uAtkB; a.vy-=ny*kb*b.cfg.atk*uAtkB;
+      b.vx+=nx*kb*a.cfg.atk*uAtkA; b.vy+=ny*kb*a.cfg.atk*uAtkA;
       shake=Math.min(10,4+rel*0.04);
       const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
       sparkFx(mx,my,"#ffd76a",8+Math.min(10,rel*0.06));
+      if(uAtkA>1.5||uAtkB>1.5){
+        addText(mx,my-40,"必殺一擊!!!","#ff3df0",30);
+        shake=13; hitstop=Math.max(hitstop,0.12); flashT=0.2; flashX=mx; flashY=my;
+        burstFx(mx,my,"#ff3df0",12);
+      }
+      if(a.ultUntil>0||b.ultUntil>0) a.ultUntil=b.ultUntil=-1; // 必殺只作用這一次碰撞
       // 反向迴旋：碰撞時互相吸收對方流失的轉速
       if(a.dir!==b.dir){
         a.rpm=Math.min(a.maxRpm,a.rpm+dB*0.18);
@@ -832,6 +932,85 @@ function burstFx(x,y,color,n){
     sparks.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:0.4+rng()*0.5,color:i%3?color:"#ffffff"});
   }
 }
+/* ================= 必殺時機 QTE ================= */
+// 模擬偵測到「即將大力對撞」→ 兩端同一步定格 → 各自按時機條 →
+// 結果（本機直接、連線經伺服器湊齊）套用到接下來那一撞 → 從同一步繼續確定性模擬
+let qteDone=false, qteActive=false, qtePanels=[], pendingUltAccs=null;
+const QTE_WINDOW=1.6;
+function triggerQTE(){
+  qteDone=true;
+  if(pendingUltAccs){ qteActive=true; applyQte(pendingUltAccs); pendingUltAccs=null; return; }
+  qteActive=true;
+  sBoom(); shake=6;
+  $("qteTitle").textContent="⚡ 必殺時機 ⚡";
+  buildQtePanels();
+  $("qte").classList.add("active");
+}
+function buildQtePanels(){
+  const cols=$("qteCols"); cols.innerHTML="";
+  qtePanels=[];
+  (online?[myIdx]:[0,1]).forEach(pi=>{
+    const c=TOPS[picks[pi]];
+    const panel=document.createElement("div");
+    panel.className="qtePanel"; panel.style.setProperty("--c",c.color);
+    panel.innerHTML='<div class="qpName">'+plName(pi)+' '+c.emoji+'</div>'
+      +'<div class="tbar"><div class="tneedle"></div></div>'
+      +'<button class="qteHit">拚!!</button>'
+      +'<div class="qpMsg">按在紅心＝超必殺</div>';
+    cols.appendChild(panel);
+    const st={pi, needle:panel.querySelector(".tneedle"), btn:panel.querySelector(".qteHit"),
+      msg:panel.querySelector(".qpMsg"), done:false, acc:0, raf:null,
+      t0:performance.now(), phase:Math.random()*6.28};
+    const loop=now=>{
+      if(st.done) return;
+      const el=(now-st.t0)/1000;
+      if(el>=QTE_WINDOW){ settleQte(st,0,true); return; }
+      st.needle.style.left=(50+Math.sin(st.phase+el*5.2)*47)+"%";
+      st.raf=requestAnimationFrame(loop);
+    };
+    st.raf=requestAnimationFrame(loop);
+    st.btn.onpointerdown=e=>{
+      e.preventDefault();
+      if(st.done) return;
+      const left=parseFloat(st.needle.style.left)||50;
+      const off=Math.min(1,Math.abs(left-50)/47);
+      settleQte(st, Math.round(Math.pow(1-off,1.6)*100)/100, false);
+    };
+    qtePanels.push(st);
+  });
+}
+function settleQte(st,accv,timeout){
+  st.done=true; st.acc=accv;
+  cancelAnimationFrame(st.raf);
+  st.btn.disabled=true;
+  st.msg.textContent = timeout?"太慢了…":(accv>0.85?"超必殺!!!":accv>0.5?"必殺!":accv>0.2?"還行!":"歪了…");
+  if(!timeout) sTick();
+  if(!qtePanels.every(p=>p.done)) return;
+  if(online){
+    if(socket) socket.emit("ult",{acc:qtePanels[0].acc});
+    $("qteTitle").textContent="等待對手…";
+  }else{
+    const accs=[0,0];
+    qtePanels.forEach(p=>{accs[p.pi]=p.acc;});
+    applyQte(accs);
+  }
+}
+function applyQte(accs){
+  if(!qteActive) return;
+  qteActive=false;
+  qtePanels.forEach(p=>cancelAnimationFrame(p.raf));
+  $("qte").classList.remove("active");
+  tops.forEach((t,i)=>{
+    const q=Math.max(0,Math.min(1,Number(accs[i])||0));
+    t.ultAtk=1+1.6*q;   // 攻擊倍率：最高 2.6 倍
+    t.ultDef=1+1.1*q;   // 防禦倍率：按得準也能大幅減傷
+    t.ultUntil=battleTime+2.5;
+    if(q>0.5) addText(t.x,t.y-34,plName(i)+" 必殺!!",t.cfg.color,22);
+  });
+  slowmo=0.35; // 慢動作衝向決勝一撞
+  sLaunch();
+}
+
 /* --- 繪圖 --- */
 function drawArena(){
   const cv=$("arena"), ctx=cv.getContext("2d");
@@ -974,7 +1153,11 @@ function endBattle(){
   let winner=null, loser=null;
   if(a.alive&&!b.alive){winner=a;loser=b;}
   else if(b.alive&&!a.alive){winner=b;loser=a;}
+  document.body.classList.remove("winBg","loseBg");
   if(winner){
+    // 連線：贏綠底、輸淺紅底；本機：有人獲勝就慶祝綠底
+    const iWin = !online || winner.i===myIdx;
+    document.body.classList.add(iWin?"winBg":"loseBg");
     $("resBadge").textContent = loser.reason==="burst"?"💥":"🏆";
     $("resPl").textContent = online ? (winner.i===myIdx?"YOU WIN":"YOU LOSE") : (winner.i+1)+"P WINS";
     $("resName").textContent=plName(winner.i)+"的 "+winner.cfg.emoji+" "+winner.cfg.name+" 獲勝！";

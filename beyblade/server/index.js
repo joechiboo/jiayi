@@ -56,6 +56,8 @@ io.on("connection", (socket) => {
       picks: [null, null],
       dirs: [1, 1],
       powers: [null, null],
+      ults: [null, null],
+      ultTimer: null,
       createdAt: Date.now(),
     });
     socket.data.roomId = roomId;
@@ -98,9 +100,27 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("opponent_launched");
     if (room.powers[0] !== null && room.powers[1] !== null) {
       const seed = Math.floor(Math.random() * 0x7fffffff);
+      room.ults = [null, null];
+      if (room.ultTimer) { clearTimeout(room.ultTimer); room.ultTimer = null; }
       io.to(roomId).emit("battle_start", { picks: room.picks, dirs: room.dirs, powers: room.powers, seed });
       console.log(`room ${roomId} battle: ${room.picks.join(" vs ")} seed=${seed}`);
     }
+  });
+
+  // 必殺時機 QTE：收齊雙方時機結果後一起廣播；一方遲遲沒送就補 0（miss）
+  socket.on("ult", ({ acc }) => {
+    const ctx = getRoomBySocket(socket);
+    if (!ctx) return;
+    const { roomId, room } = ctx;
+    room.ults[socket.data.idx] = Math.max(0, Math.min(1, Number(acc) || 0));
+    const finish = () => {
+      if (room.ultTimer) { clearTimeout(room.ultTimer); room.ultTimer = null; }
+      const accs = room.ults.map((v) => (v === null ? 0 : v));
+      room.ults = [null, null];
+      io.to(roomId).emit("ult_result", { accs });
+    };
+    if (room.ults[0] !== null && room.ults[1] !== null) finish();
+    else if (!room.ultTimer) room.ultTimer = setTimeout(finish, 4000);
   });
 
   // 任一方按「再戰／重選」，整房一起進入下一輪
@@ -109,6 +129,8 @@ io.on("connection", (socket) => {
     if (!ctx) return;
     const { roomId, room } = ctx;
     room.powers = [null, null];
+    room.ults = [null, null];
+    if (room.ultTimer) { clearTimeout(room.ultTimer); room.ultTimer = null; }
     if (repick) { room.picks = [null, null]; room.dirs = [1, 1]; }
     io.to(roomId).emit("again", { repick: !!repick });
   });
@@ -117,7 +139,8 @@ io.on("connection", (socket) => {
     console.log(`disconnected: ${socket.id}`);
     const ctx = getRoomBySocket(socket);
     if (!ctx) return;
-    const { roomId } = ctx;
+    const { roomId, room } = ctx;
+    if (room.ultTimer) clearTimeout(room.ultTimer);
     socket.to(roomId).emit("opponent_left");
     rooms.delete(roomId);
     console.log(`room ${roomId} closed`);
